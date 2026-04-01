@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "381847101639",
+    "project_id": "socialtravelbooking",
+    "storage_bucket": "socialtravelbooking.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:381847101639:android:1b233e080607b1f0075ee2",
+        "android_client_info": {
+          "package_name": "com.example.mobile_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDiqRkXiPH5z7N7ry9tXbsObkFARbe8XRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
