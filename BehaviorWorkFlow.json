@@ -1,0 +1,316 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "behavior-tracking",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 200],
+      "id": "webhook-trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$json.body.user_id }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Filter: Valid Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 200],
+      "id": "filter-data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $node['Filter: Valid Data'].json.body.action_type }}",
+              "value2": "comment_post"
+            }
+          ]
+        }
+      },
+      "name": "Check Comment?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 200],
+      "id": "check-comment"
+    },
+    {
+      "parameters": {
+        "method": "analyzeDocument",
+        "prompt": "=Analyze this user comment: \"{{ $node['Filter: Valid Data'].json.body.comment_text }}\". Rate interest from 1 to 10. Return ONLY the number.",
+        "options": {}
+      },
+      "name": "Gemini AI: Analysis",
+      "type": "n8n-nodes-base.googleGemini",
+      "typeVersion": 1,
+      "position": [700, 100],
+      "id": "gemini-analysis",
+      "credentials": {
+        "googleGeminiApi": {
+          "id": "gemini-cred",
+          "name": "Gemini API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "ai_score",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set: AI Score",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 100],
+      "id": "set-ai-score"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "ai_score",
+              "value": 0
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set: Zero AI Score",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "set-zero-ai"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "name": "Merge Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1100, 200],
+      "id": "merge-branches"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $node['Filter: Valid Data'].json.body;\nconst action = body.action_type;\nconst aiScore = $json.ai_score || 0;\n\nlet baseScore = 0;\nif (action === 'view_service') baseScore = 10;\nelse if (action === 'like_post') baseScore = 5;\nelse if (action === 'view_post') baseScore = 2;\nelse baseScore = 1;\n\nconst totalScore = parseFloat(aiScore) + baseScore + (parseFloat(body.dwell_time || 0) / 10);\n\nreturn [{\n  json: {\n    user_id: body.user_id,\n    action_type: action,\n    service_type: body.service_type || null,\n    location_id: body.location_id || null,\n    tags: body.tags || [],\n    score: totalScore\n  }\n}];"
+      },
+      "name": "Calculate Final Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1300, 200],
+      "id": "calc-score"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/internal/db/upsert-behavior",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"{{ $json.user_id }}\",\n  \"action_type\": \"{{ $json.action_type }}\",\n  \"service_type\": \"{{ $json.service_type }}\",\n  \"location_id\": {{ $json.location_id === null ? \"null\" : $json.location_id }},\n  \"tags\": {{ JSON.stringify($json.tags || []) }},\n  \"score\": {{ $json.score }}\n}",
+        "options": {}
+      },
+      "name": "Laravel API: Upsert Behavior",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1550, 200],
+      "id": "api-upsert"
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyMinute",
+              "value": 5
+            }
+          ]
+        }
+      },
+      "name": "Cron: Every 5 Mins",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 500],
+      "id": "cron-trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/internal/db/process-bulk",
+        "options": {}
+      },
+      "name": "Laravel API: Bulk Process",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [350, 500],
+      "id": "api-bulk-process"
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 3
+            }
+          ]
+        }
+      },
+      "name": "Cron: Daily Cleanup",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [100, 700],
+      "id": "cron-cleanup"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/internal/db/cleanup",
+        "options": {}
+      },
+      "name": "Laravel API: Cleanup Old",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [350, 700],
+      "id": "api-cleanup"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter: Valid Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Valid Data": {
+      "main": [
+        [
+          {
+            "node": "Check Comment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Comment?": {
+      "main": [
+        [
+          {
+            "node": "Gemini AI: Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set: Zero AI Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini AI: Analysis": {
+      "main": [
+        [
+          {
+            "node": "Set: AI Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: AI Score": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Zero AI Score": {
+      "main": [
+        [
+          {
+            "node": "Merge Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Branches": {
+      "main": [
+        [
+          {
+            "node": "Calculate Final Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Final Score": {
+      "main": [
+        [
+          {
+            "node": "Laravel API: Upsert Behavior",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron: Every 5 Mins": {
+      "main": [
+        [
+          {
+            "node": "Laravel API: Bulk Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron: Daily Cleanup": {
+      "main": [
+        [
+          {
+            "node": "Laravel API: Cleanup Old",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

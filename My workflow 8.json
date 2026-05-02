@@ -1,0 +1,503 @@
+{
+  "name": "My workflow 8",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "1. Trigger (Bắt đầu)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        192
+      ],
+      "id": "2f0428be-654e-4fa3-8f26-b6373cb87eb6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy danh sách người dùng (users) trực tiếp từ dữ liệu API trả về\nconst users = $input.first().json.data;\n\n// Kiểm tra nếu hệ thống không có user nào thì trả về mảng rỗng\nif (!users || !Array.isArray(users)) {\n  return [];\n}\n\n// Tách mảng user để hệ thống n8n lặp qua từng người một\nreturn users.map(user => {\n  return {\n    json: user\n  };\n});\n\n"
+      },
+      "name": "3. Code: Chuẩn hóa Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        192
+      ],
+      "id": "8dda8a33-aafe-442c-b4fd-1fa7401cdc6b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.bookings_count }}\n",
+              "operation": "larger"
+            }
+          ]
+        }
+      },
+      "name": "4. IF: User mới?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        192
+      ],
+      "id": "bc3fe486-5b7b-4de8-81af-6fb9514a5418"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/n8n/coupons",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "code",
+              "value": "=WELCOME_{{ $json.id }}"
+            },
+            {
+              "name": "type",
+              "value": "percent"
+            },
+            {
+              "name": "discount_value",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "5. Code: Tạo Voucher 20%",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        48,
+        48
+      ],
+      "id": "e662a74e-8ca0-4f18-a744-1debe39169c1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "dangthanhvu0103@gmail.com",
+        "toEmail": "={{ $('4. IF: User mới?').item.json.email }}",
+        "subject": "Quà tặng cho thành viên mới!",
+        "html": "=<div style=\"font-family: Arial, sans-serif; border: 2px dashed #e67e22; padding: 25px; border-radius: 15px; background-color: #fffaf5; text-align: center;\">\n  <h2 style=\"color: #e67e22;\">🎁 Quà tặng chào mừng thành viên mới!</h2>\n  <p>Chào <b>{{ $('3. Code: Chuẩn hóa Data').item.json.contact_name }}</b>,</p>\n  <p>Cảm ơn bạn đã tin tưởng đặt chuyến đi đầu tiên tại Social Travel Booking.</p>\n  \n  <div style=\"margin: 20px 0; padding: 15px; background-color: #e67e22; color: white; display: inline-block; border-radius: 5px; font-size: 20px; font-weight: bold;\">\n    Mã Voucher: WELCOME20\n  </div>\n  \n  <p><i>(Giảm ngay 20% cho đơn hàng tiếp theo của bạn)</i></p>\n  \n  <hr style=\"border: 0; border-top: 1px solid #eee; margin: 20px 0;\">\n  <a href=\"http://localhost:5173\" style=\"background-color: #d35400; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;\">Sử dụng ngay</a>\n</div>\n",
+        "options": {}
+      },
+      "name": "6. Send Email: Gửi Voucher",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        32
+      ],
+      "id": "3f057b0e-4619-42ea-9144-0b71c582ac7c",
+      "webhookId": "1ba1d59a-70df-459a-acef-df5c94596782",
+      "credentials": {
+        "smtp": {
+          "id": "qVR23bwWQ4kaFeD5",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=http://127.0.0.1:8000/api/n8n/user-history/{{ $json.id }}",
+        "options": {}
+      },
+      "name": "7. HTTP: Lấy Lịch sử",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -208,
+        352
+      ],
+      "id": "2568100b-a4b3-4c7c-b9f2-422ad9ca8770"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "logic",
+              "value": "Cross-sell"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "9. Gợi ý chỗ ở (Hotel)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        208,
+        288
+      ],
+      "id": "a4c5a9bc-1883-41d4-ad47-72c643ca1fe0"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/api/n8n/hotels",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location_id",
+              "value": "=\n{{ $json.data[0].service.location_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "10. HTTP: Lấy Hotel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        288
+      ],
+      "id": "b4b3b425-f253-446d-8f73-1604291c9bbf"
+    },
+    {
+      "parameters": {
+        "fromEmail": "dangthanhvu0103@gmail.com",
+        "toEmail": "={{ $('3. Code: Chuẩn hóa Data').item.json.email }}",
+        "subject": "Gợi ý khách sạn cho bạn",
+        "html": "=\n<h2>Chào {{ $('3. Code: Chuẩn hóa Data').item.json.display_name }},,</h2>\n<p>Dựa trên lịch sử du lịch gần đây, chúng tôi có gợi ý tuyệt vời dành cho bạn:</p>\n\n<div style=\"padding: 15px; border: 1px solid #ddd; border-radius: 8px; max-width: 500px;\">\n  \n  <!-- Lấy ảnh đầu tiên của dịch vụ -->\n  <img src=\"{{ $json.data[0].media[0].url }}\" style=\"width: 100%; border-radius: 5px; margin-bottom: 10px;\" alt=\"Ảnh dịch vụ\">\n\n  <h3 style=\"color: #2c3e50; margin-top: 0;\">{{ $json.data[0].name }}</h3>\n  <p><b>💰 Giá phòng:</b> {{ $json.data[0].base_price }} VNĐ</p>\n  <p><b>📝 Mô tả:</b> {{ $json.data[0].description }}</p>\n\n  <hr>\n  <p style=\"text-align: center;\">\n    <a href=\"http://localhost:5173/service/{{ $json.data[0].slug }}\" \n       style=\"background-color: #3498db; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;\">\n       Xem và Đặt ngay\n    </a>\n  </p>\n</div>\n",
+        "options": {}
+      },
+      "name": "11. Send Email: Gợi ý Hotel",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        608,
+        288
+      ],
+      "id": "6137c112-6d06-4d43-afa7-aba893b37415",
+      "webhookId": "733594ee-ed41-47d8-8eac-9146cad93a27",
+      "credentials": {
+        "smtp": {
+          "id": "qVR23bwWQ4kaFeD5",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "logic",
+              "value": "Upsell"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "12. Gợi ý Tour mới",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        208,
+        464
+      ],
+      "id": "5ec34a8b-9fe3-4874-9283-677c6ec217bc"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/api/n8n/services",
+        "options": {}
+      },
+      "name": "13. HTTP: Lấy Tour mới",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        400,
+        464
+      ],
+      "id": "688e075f-de8d-492e-9dd1-ad5dbe6b0f62"
+    },
+    {
+      "parameters": {
+        "fromEmail": "dangthanhvu0103@gmail.com",
+        "toEmail": "={{ $('3. Code: Chuẩn hóa Data').item.json.email }}",
+        "subject": "Hành trình mới cho bạn",
+        "html": "=<h2>🌍 Chào {{ $('3. Code: Chuẩn hóa Data').item.json.display_name }},,</h2>\n<p>Bạn đã sẵn sàng cho hành trình tiếp theo chưa? Chúng tôi tìm thấy một Tour cực kỳ phù hợp với bạn:</p>\n\n<div style=\"padding: 15px; border: 2px solid #27ae60; border-radius: 10px; max-width: 500px; background-color: #f9fdf9;\">\n  <img src=\"{{ $json.data[0].media[0].url }}\" style=\"width: 100%; border-radius: 8px; margin-bottom: 12px;\" alt=\"Ảnh Tour\">\n\n  <h2 style=\"color: #27ae60; margin-top: 0;\">Tour: {{ $json.data[0].name }}</h2>\n  <p><b>💵 Giá ưu đãi:</b> {{ $json.data[0].base_price }} VNĐ</p>\n  <p><b>✨ Trải nghiệm:</b> {{ $json.data[0].description }}</p>\n\n  <hr style=\"border: 0; border-top: 1px solid #eee;\">\n  <p style=\"text-align: center;\">\n    <a href=\"http://localhost:5173/service/{{ $json.data[0].slug }}\" \n       style=\"background-color: #27ae60; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;\">\n       Khám phá ngay\n    </a>\n  </p>\n</div>\n",
+        "options": {}
+      },
+      "name": "14. Send Email: Gợi ý Tour",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        608,
+        464
+      ],
+      "id": "d2f89fd2-8070-442f-aa46-0eee11b65f2a",
+      "webhookId": "cc6d8f08-4df3-42f5-9c63-715d06e07fbe",
+      "credentials": {
+        "smtp": {
+          "id": "qVR23bwWQ4kaFeD5",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/social/post",
+        "options": {}
+      },
+      "name": "15. Social Auto-Post (END)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        896,
+        400
+      ],
+      "id": "a4501996-0ca5-4c97-9677-295b733a0adc"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data[0].service.type }}",
+              "value2": "hotel"
+            }
+          ]
+        }
+      },
+      "name": "8. IF: Là Hotel hay Tour?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        0,
+        368
+      ],
+      "id": "23f0ef3e-6ae8-45f4-884a-10810187d9b7"
+    },
+    {
+      "parameters": {
+        "url": "http://127.0.0.1:8000/api/n8n/users",
+        "options": {}
+      },
+      "name": "2. HTTP: Lấy Toàn Bộ User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -832,
+        192
+      ],
+      "id": "0d751448-df39-4c3f-910e-5ba974fddbbc"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://127.0.0.1:8000/api/n8n/users/{{ $('3. Code: Chuẩn hóa Data').item.json.id }}/mark-emailed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        80
+      ],
+      "id": "68153bae-bb44-41d6-b54e-0514322597f9",
+      "name": "Đánh dấu đã gửi Email"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "1. Trigger (Bắt đầu)": {
+      "main": [
+        [
+          {
+            "node": "2. HTTP: Lấy Toàn Bộ User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Code: Chuẩn hóa Data": {
+      "main": [
+        [
+          {
+            "node": "4. IF: User mới?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. IF: User mới?": {
+      "main": [
+        [
+          {
+            "node": "7. HTTP: Lấy Lịch sử",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "5. Code: Tạo Voucher 20%",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Code: Tạo Voucher 20%": {
+      "main": [
+        [
+          {
+            "node": "6. Send Email: Gửi Voucher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. HTTP: Lấy Lịch sử": {
+      "main": [
+        [
+          {
+            "node": "8. IF: Là Hotel hay Tour?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Gợi ý chỗ ở (Hotel)": {
+      "main": [
+        [
+          {
+            "node": "10. HTTP: Lấy Hotel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10. HTTP: Lấy Hotel": {
+      "main": [
+        [
+          {
+            "node": "11. Send Email: Gợi ý Hotel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11. Send Email: Gợi ý Hotel": {
+      "main": [
+        [
+          {
+            "node": "15. Social Auto-Post (END)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Đánh dấu đã gửi Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12. Gợi ý Tour mới": {
+      "main": [
+        [
+          {
+            "node": "13. HTTP: Lấy Tour mới",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13. HTTP: Lấy Tour mới": {
+      "main": [
+        [
+          {
+            "node": "14. Send Email: Gợi ý Tour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14. Send Email: Gợi ý Tour": {
+      "main": [
+        [
+          {
+            "node": "15. Social Auto-Post (END)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Đánh dấu đã gửi Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. IF: Là Hotel hay Tour?": {
+      "main": [
+        [
+          {
+            "node": "12. Gợi ý Tour mới",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "9. Gợi ý chỗ ở (Hotel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. HTTP: Lấy Toàn Bộ User": {
+      "main": [
+        [
+          {
+            "node": "3. Code: Chuẩn hóa Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Send Email: Gửi Voucher": {
+      "main": [
+        [
+          {
+            "node": "Đánh dấu đã gửi Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "67742a62-b67a-4978-b81b-1f658a04a576",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84123fb77f7e6a9f9951cf3a5ace9dc97726cc2c3849f0a36d07ce70182ed16b"
+  },
+  "id": "5Ipa9ZCrjoeCv1C9",
+  "tags": []
+}
