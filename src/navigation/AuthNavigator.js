@@ -13,10 +13,16 @@ const AuthNavigator = () => {
   return (
     <Stack.Navigator
       initialRouteName="Login"
-      screenOptions={{ headerShown: false }} // Ẩn header mặc định
+      screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{
+          animation: 'slide_from_bottom',
+        }}
+      />
     </Stack.Navigator>
   );
 };
