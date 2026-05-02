@@ -1,47 +1,52 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
-import { MotiText, MotiView } from 'moti';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, View, Animated, Dimensions, ActivityIndicator } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 
 const { height } = Dimensions.get('window');
 
 const SplashScreen = ({ onFinish }) => {
+  const slideAnim = useRef(new Animated.Value(height / 4)).current; // Giảm khoảng cách trượt cho mượt hơn
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
-    // Chờ 2.5 giây để đảm bảo tính thương mại và tải xong dữ liệu
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
     const timer = setTimeout(() => {
       onFinish();
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [onFinish]);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <MotiView
-        from={{ opacity: 0, scale: 0.5 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: 'spring', duration: 1000 }}
-        style={styles.logoContainer}
-      >
-        <MotiText
-          from={{ translateY: height / 2 }}
-          animate={{ translateY: 0 }}
-          transition={{ type: 'timing', duration: 1500 }}
-          style={styles.text}
-        >
+      <Animated.View style={[
+        styles.logoContainer,
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+      ]}>
+        <Animated.Text style={styles.text}>
           Social Travel Booking
-        </MotiText>
+        </Animated.Text>
         
-        <MotiView 
-          from={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1000, duration: 1000 }}
-          style={styles.indicatorContainer}
-        >
-          <View style={styles.line} />
-        </MotiView>
-      </MotiView>
+        {/* Thay thế gạch dưới bằng Loading iOS */}
+        <ActivityIndicator 
+          size="small" 
+          color={Colors.primary} 
+          style={styles.loader} 
+        />
+      </Animated.View>
     </View>
   );
 };
@@ -57,18 +62,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontSize: Typography.size.h1,
+    fontSize: Typography.size.h2,
     fontWeight: Typography.weight.bold,
     color: Colors.primary,
     letterSpacing: 1,
     textAlign: 'center',
   },
-  indicatorContainer: {
-    marginTop: 20,
-    width: 40,
-    height: 3,
-    backgroundColor: Colors.primary,
-    borderRadius: 2,
+  loader: {
+    marginTop: 30,
   },
 });
 

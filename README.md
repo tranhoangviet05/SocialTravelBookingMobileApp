@@ -1,77 +1,62 @@
-# 📱 Social Travel Booking - Mobile App Project
+# Social Travel Booking - Mobile App (React Native & Laravel)
 
-Chào mừng bạn đến với Repository dành riêng cho team Mobile. Repo này bao gồm toàn bộ hệ sinh thái cần thiết để phát triển và chạy ứng dụng Mobile, bao gồm cả Backend API và Web Dashboard (dành cho Admin/Provider).
+Ứng dụng di động dành cho hệ thống đặt vé du lịch, được xây dựng bằng **React Native (Expo)** và tích hợp hệ thống xác thực **Firebase** kết hợp đồng bộ dữ liệu **Laravel (PostgreSQL)**.
 
-## 📂 Cấu trúc thư mục
-- `/` (Root): Mã nguồn React Native (Mobile App).
-- `/backend`: Laravel API Server (Cung cấp dữ liệu cho App).
-- `/frontend_web`: React Web (Dành cho Admin và Provider quản lý).
-- `/flutter_old`: Lưu trữ code cũ của bản Flutter (nếu cần tham khảo).
+## 📱 Hướng dẫn Kết nối & Chạy dự án
+
+Để chạy ứng dụng trên điện thoại thật và kết nối được với Server Backend trên máy tính, bạn **bắt buộc** phải thực hiện đúng các bước sau:
+
+### 1. Chuẩn bị Mạng (Quan trọng nhất)
+*   Đảm bảo **Điện thoại** và **Máy tính** đang bắt chung một mạng **WiFi**.
+
+### 2. Khởi chạy Backend (Laravel)
+Di chuyển vào thư mục `backend` và chạy lệnh sau (Không dùng `localhost` hay `127.0.0.1`):
+
+```bash
+php -S 0.0.0.0:8000 -t public
+```
+> **Lưu ý:** Lệnh `0.0.0.0` cho phép các thiết bị bên ngoài (như điện thoại) truy cập vào máy tính của bạn thông qua địa chỉ IP LAN.
+
+### 3. Cấu hình IP LAN trên Mobile
+1.  Tìm địa chỉ IPv4 của máy tính:
+    *   Mở Terminal (PowerShell/CMD) gõ: `ipconfig`
+    *   Tìm dòng `IPv4 Address` (Ví dụ: `192.168.1.14`).
+2.  Mở file `src/api/apiClient.js` trong dự án Mobile.
+3.  Cập nhật biến `IP_LAN` bằng địa chỉ vừa tìm được:
+    ```javascript
+    const IP_LAN = '192.168.1.xx'; // Thay xx bằng số của bạn
+    ```
+
+### 4. Khởi chạy ứng dụng Expo
+Mở một Terminal mới tại thư mục gốc của dự án Mobile:
+
+```bash
+npx expo start -c
+```
+*   Dùng ứng dụng **Expo Go** trên điện thoại để quét mã QR hiện ra trên màn hình máy tính.
 
 ---
 
-## 🛠 Hướng dẫn Setup cho máy mới (Lần đầu tiên)
+## 🛠 Cấu trúc dự án & Luồng xác thực
 
-### 1. Cài đặt các công cụ cần thiết
-Bạn cần cài đặt các công cụ sau trước khi bắt đầu:
-- **Flutter SDK**: [Cài đặt tại đây](https://docs.flutter.dev/get-started/install)
-- **PHP (8.2+)**: Khuyên dùng [Laravel Herd](https://herd.laravel.com/) cho Windows để tự động có PHP & Composer.
-- **Node.js (18+)**: Để chạy frontend web.
-- **PostgreSQL**: Hệ quản trị cơ sở dữ liệu.
-- **Git**: Để quản lý mã nguồn.
+### Luồng Đăng nhập/Đăng ký (Auth Flow)
+1.  **Xác thực Firebase**: Người dùng nhập email/mật khẩu, ứng dụng gọi Firebase Auth để xác thực.
+2.  **Màn hình Đồng bộ (SyncLoading)**: 
+    *   Ngay sau khi Firebase thành công, ứng dụng chuyển vào màn hình chờ.
+    *   Tại đây, ứng dụng lấy `ID Token` từ Firebase và gọi API `POST /api/auth/post/sync` sang Laravel.
+3.  **Lưu PostgreSQL**: Laravel kiểm tra token, lấy thông tin người dùng và lưu/cập nhật vào DB PostgreSQL.
+4.  **Hoàn tất**: Sau khi Backend phản hồi thành công (200 OK), người dùng mới được vào Trang chủ.
 
-### 2. Thiết lập Backend (Laravel)
-Mở terminal và thực hiện các lệnh sau:
-```bash
-cd backend
-composer install
-copy .env.example .env
-php artisan key:generate
-```
-**Quan trọng:** Bạn cần mở file `.env` và cập nhật thông tin Database của bạn:
-```env
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=social_travel_mobile  # Tên database bạn đã tạo
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-```
-Sau đó chạy migration để tạo bảng:
-```bash
-php artisan migrate
-```
+### Các công nghệ chính
+*   **Frontend**: React Native, Expo, React Navigation, Lucide Icons.
+*   **Backend**: Laravel 11, Firebase Admin SDK.
+*   **Database**: PostgreSQL.
+*   **Storage**: Cloudinary (Upload ảnh).
 
-### 3. Thiết lập Frontend Web (React)
-```bash
-cd frontend_web
-npm install
-```
-
-### 4. Thiết lập React Native (Expo) App
-```bash
-npm install
-```
+## ⚠️ Giải quyết lỗi thường gặp
+*   **Network Error**: Kiểm tra xem đã chạy PHP với `0.0.0.0` chưa và IP trong `apiClient.js` có khớp với `ipconfig` không.
+*   **Timeout**: Đã được cấu hình lên 60 giây trong `apiClient.js` để chờ Firebase xác thực lần đầu.
+*   **HostFunction Error**: Đảm bảo phiên bản `react-native-screens` và `reanimated` tương thích với Expo 54 (Xem hướng dẫn trong log terminal).
 
 ---
-
-## 🚀 Cách chạy dự án
-
-Để thuận tiện, chúng tôi đã chuẩn bị file `start.bat`. Bạn chỉ cần double-click vào file này ở thư mục gốc để khởi động đồng thời:
-- Laravel API (Cổng 8000)
-- WebSocket Server (Cổng 8080)
-- React Web (Cổng 5173)
-
-Sau đó, để chạy ứng dụng Mobile, hãy dùng lệnh:
-```bash
-npx expo start
-```
-*(Bạn có thể quét mã QR bằng ứng dụng **Expo Go** trên điện thoại để xem app)*
-
----
-
-## 📜 Quy tắc đóng góp (Contributing)
-Vui lòng tham khảo file `CONTRIBUTING.md` để biết quy định về đặt tên nhánh và quy trình làm việc.
-
-## 🔑 Tài khoản Test
-Tham khảo file `ACCOUNT.md` để lấy danh sách tài khoản Admin/Provider mẫu.
+*Phát triển bởi Đội ngũ Social Travel Booking*

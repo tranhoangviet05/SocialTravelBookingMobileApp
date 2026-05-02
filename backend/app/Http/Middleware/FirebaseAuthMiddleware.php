@@ -25,6 +25,9 @@ class FirebaseAuthMiddleware
      */
     public function handle(Request $request, Closure $next): mixed
     {
+        // Tăng thời gian chờ để tránh timeout khi gọi Google API
+        set_time_limit(120);
+
         // Lấy token từ header Authorization
         $bearerToken = $request->bearerToken();
 
@@ -33,9 +36,13 @@ class FirebaseAuthMiddleware
         }
 
         try {
-            // Xác minh ID Token với Firebase (thêm 60s leeway để tránh lỗi lệch thời gian nhỏ)
+            \Log::info('Firebase Auth: Bắt đầu xác thực token...');
+            
+            // Xác minh ID Token với Firebase
             $auth = Firebase::auth();
             $verifiedToken = $auth->verifyIdToken($bearerToken, false, 60);
+
+            \Log::info('Firebase Auth: Xác thực thành công.');
 
             // Lưu thông tin user vào request để dùng ở controller
             $uid = $verifiedToken->claims()->get('sub');

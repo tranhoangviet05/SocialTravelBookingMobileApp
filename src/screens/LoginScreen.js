@@ -1,6 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, Alert, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { MotiView } from 'moti';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  StyleSheet, Text, View,
+  ActivityIndicator, Animated, TouchableOpacity, 
+  Image, ScrollView
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase';
 import { Colors } from '../constants/Colors';
@@ -8,13 +12,33 @@ import { Typography } from '../constants/Typography';
 import CustomButton from '../components/common/CustomButton';
 import CustomInput from '../components/common/CustomInput';
 import Toast from '../components/common/Toast';
-import { Mail, Lock, LogIn } from 'lucide-react-native';
+import { loginUser } from '../utils/authService';
+import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const toastRef = useRef(null);
+
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     if (email === '' || password === '') {
@@ -24,13 +48,17 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
-      // Giả lập thời gian chờ xử lý mượt mà
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      await signInWithEmailAndPassword(auth, email, password);
+      await loginUser(email, password);
+      // Firebase auth thành công → RootNavigator tự động chuyển sang AppNavigator
       toastRef.current?.show('Đăng nhập thành công!', 'success');
     } catch (error) {
-      toastRef.current?.show('Sai email hoặc mật khẩu. Vui lòng thử lại!', 'error');
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        toastRef.current?.show('Sai email hoặc mật khẩu!', 'error');
+      } else if (error.code === 'auth/user-not-found') {
+        toastRef.current?.show('Tài khoản không tồn tại', 'error');
+      } else {
+        toastRef.current?.show('Đã có lỗi xảy ra, vui lòng thử lại', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -39,18 +67,24 @@ const LoginScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Toast ref={toastRef} />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+
+      {/* 
+        ScrollView với keyboardShouldPersistTaps="handled" là cách chuẩn nhất của React Native
+        - Bàn phím KHÔNG bị đóng khi click vào Input
+        - Bàn phím bị đóng khi nhấn vào các nút bấm (Button, TouchableOpacity)
+        - Giao diện không bị đẩy lên vì contentContainerStyle có justifyContent: 'center'
+      -->
+      */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        <MotiView 
-          from={{ opacity: 0, translateY: 50 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'timing', duration: 800 }}
-          style={styles.content}
-        >
-          {/* Header Section */}
+        <Animated.View style={[
+          styles.content,
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+        ]}>
           <View style={styles.header}>
             <Text style={styles.welcomeText}>Chào mừng bạn đến với</Text>
             <Text style={styles.logoText}>Social Travel Booking</Text>
@@ -59,27 +93,26 @@ const LoginScreen = () => {
             </Text>
           </View>
           
-          {/* Form Section */}
           <View style={styles.form}>
-            <View style={styles.inputWrapper}>
-              <Mail size={20} color={Colors.textSecondary} style={styles.inputIcon} />
-              <CustomInput
-                placeholder="Địa chỉ Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-              />
-            </View>
+            <CustomInput
+              label="Địa chỉ Email"
+              placeholder="example@gmail.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
             
-            <View style={styles.inputWrapper}>
-              <Lock size={20} color={Colors.textSecondary} style={styles.inputIcon} />
-              <CustomInput
-                placeholder="Mật khẩu"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
+            <CustomInput
+              label="Mật khẩu"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+            </TouchableOpacity>
             
             <CustomButton 
               title={loading ? <ActivityIndicator color={Colors.white} /> : "Đăng nhập"} 
@@ -93,20 +126,26 @@ const LoginScreen = () => {
               <View style={styles.line} />
             </View>
 
-            <CustomButton 
-              title="Tiếp tục với Google" 
-              type="outline"
-              onPress={() => toastRef.current?.show('Tính năng đang phát triển', 'error')}
+            <TouchableOpacity 
               style={styles.googleButton}
-            />
+              onPress={() => toastRef.current?.show('Tính năng đang phát triển', 'error')}
+            >
+              <Image 
+                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
+                style={styles.googleIcon} 
+              />
+              <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
+            </TouchableOpacity>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>Chưa có tài khoản? </Text>
-              <Text style={styles.link}>Đăng ký ngay</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.link}>Đăng ký ngay</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </MotiView>
-      </KeyboardAvoidingView>
+        </Animated.View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -116,13 +155,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
-  container: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center', // Giữ nội dung ở giữa màn hình
   },
   content: {
-    flex: 1,
     paddingHorizontal: Typography.spacing.lg,
-    justifyContent: 'center',
+    paddingVertical: Typography.spacing.xl,
   },
   header: {
     marginBottom: Typography.spacing.xl,
@@ -149,18 +188,16 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
   },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: Typography.spacing.md,
   },
-  inputIcon: {
-    position: 'absolute',
-    left: 15,
-    zIndex: 1,
-    top: 28, // Căn chỉnh giữa theo CustomInput
+  forgotPasswordText: {
+    fontSize: Typography.size.caption,
+    color: Colors.primary,
+    fontWeight: Typography.weight.medium,
   },
   loginButton: {
-    marginTop: Typography.spacing.md,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -168,7 +205,25 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    minHeight: 56,
     marginTop: Typography.spacing.sm,
+    backgroundColor: Colors.white,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 12,
+  },
+  googleButtonText: {
+    fontSize: Typography.size.body,
+    fontWeight: Typography.weight.semibold,
+    color: Colors.text,
   },
   dividerContainer: {
     flexDirection: 'row',

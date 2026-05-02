@@ -5,27 +5,21 @@ import apiClient from './apiClient';
  * Chứa các phương thức gọi API liên quan đến xác thực và người dùng
  */
 export const authApi = {
-  // 1. Đăng nhập
-  login: (email, password) => {
-    return apiClient.post('/login', { email, password });
+  /**
+   * Đồng bộ người dùng Firebase vào PostgreSQL.
+   * Gọi sau khi đăng nhập/đăng ký Firebase thành công.
+   * Backend sẽ tự tạo hoặc cập nhật user trong DB.
+   */
+  syncUser: () => {
+    return apiClient.post('/auth/post/sync');
   },
 
-  // 2. Đăng ký
-  register: (userData) => {
-    return apiClient.post('/register', userData);
-  },
-
-  // 3. Lấy thông tin cá nhân (Cần Token - đã được interceptor tự gắn)
+  // Lấy thông tin cá nhân
   getProfile: () => {
-    return apiClient.get('/user/profile');
+    return apiClient.get('/user/get/profile');
   },
 
-  // 4. Đăng xuất
-  logout: () => {
-    return apiClient.post('/logout');
-  },
-
-  // 5. Cập nhật thông tin
+  // Cập nhật thông tin
   updateProfile: (data) => {
     return apiClient.put('/user/profile', data);
   }

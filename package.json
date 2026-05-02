@@ -9,8 +9,9 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^3.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "^7.2.2",
+    "@react-navigation/native-stack": "^7.14.12",
     "@react-navigation/stack": "^7.8.11",
     "axios": "^1.15.2",
     "expo": "~54.0.33",
@@ -20,10 +21,13 @@
     "moti": "^0.30.0",
     "react": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-gesture-handler": "^2.31.1",
-    "react-native-reanimated": "^4.3.0",
-    "react-native-safe-area-context": "^5.7.0",
-    "react-native-screens": "^4.24.0"
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-reanimated": "~3.16.1",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "babel-preset-expo": "^55.0.19"
+  }
 }
