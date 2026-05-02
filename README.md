@@ -3,9 +3,10 @@
 Chào mừng bạn đến với Repository dành riêng cho team Mobile. Repo này bao gồm toàn bộ hệ sinh thái cần thiết để phát triển và chạy ứng dụng Mobile, bao gồm cả Backend API và Web Dashboard (dành cho Admin/Provider).
 
 ## 📂 Cấu trúc thư mục
-- `/` (Root): Mã nguồn Flutter (Mobile App).
+- `/` (Root): Mã nguồn React Native (Mobile App).
 - `/backend`: Laravel API Server (Cung cấp dữ liệu cho App).
 - `/frontend_web`: React Web (Dành cho Admin và Provider quản lý).
+- `/flutter_old`: Lưu trữ code cũ của bản Flutter (nếu cần tham khảo).
 
 ---
 
@@ -47,9 +48,9 @@ cd frontend_web
 npm install
 ```
 
-### 4. Thiết lập Flutter App
+### 4. Thiết lập React Native (Expo) App
 ```bash
-flutter pub get
+npm install
 ```
 
 ---
@@ -63,9 +64,9 @@ flutter pub get
 
 Sau đó, để chạy ứng dụng Mobile, hãy dùng lệnh:
 ```bash
-flutter run
+npx expo start
 ```
-*(Hoặc nhấn F5 trong VS Code khi đang mở file `lib/main.dart`)*
+*(Bạn có thể quét mã QR bằng ứng dụng **Expo Go** trên điện thoại để xem app)*
 
 ---
 
