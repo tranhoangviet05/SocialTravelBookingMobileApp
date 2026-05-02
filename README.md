@@ -1,62 +1,88 @@
 # Social Travel Booking - Mobile App (React Native & Laravel)
 
-Ứng dụng di động dành cho hệ thống đặt vé du lịch, được xây dựng bằng **React Native (Expo)** và tích hợp hệ thống xác thực **Firebase** kết hợp đồng bộ dữ liệu **Laravel (PostgreSQL)**.
-
-## 📱 Hướng dẫn Kết nối & Chạy dự án
-
-Để chạy ứng dụng trên điện thoại thật và kết nối được với Server Backend trên máy tính, bạn **bắt buộc** phải thực hiện đúng các bước sau:
-
-### 1. Chuẩn bị Mạng (Quan trọng nhất)
-*   Đảm bảo **Điện thoại** và **Máy tính** đang bắt chung một mạng **WiFi**.
-
-### 2. Khởi chạy Backend (Laravel)
-Di chuyển vào thư mục `backend` và chạy lệnh sau (Không dùng `localhost` hay `127.0.0.1`):
-
-```bash
-php -S 0.0.0.0:8000 -t public
-```
-> **Lưu ý:** Lệnh `0.0.0.0` cho phép các thiết bị bên ngoài (như điện thoại) truy cập vào máy tính của bạn thông qua địa chỉ IP LAN.
-
-### 3. Cấu hình IP LAN trên Mobile
-1.  Tìm địa chỉ IPv4 của máy tính:
-    *   Mở Terminal (PowerShell/CMD) gõ: `ipconfig`
-    *   Tìm dòng `IPv4 Address` (Ví dụ: `192.168.1.14`).
-2.  Mở file `src/api/apiClient.js` trong dự án Mobile.
-3.  Cập nhật biến `IP_LAN` bằng địa chỉ vừa tìm được:
-    ```javascript
-    const IP_LAN = '192.168.1.xx'; // Thay xx bằng số của bạn
-    ```
-
-### 4. Khởi chạy ứng dụng Expo
-Mở một Terminal mới tại thư mục gốc của dự án Mobile:
-
-```bash
-npx expo start -c
-```
-*   Dùng ứng dụng **Expo Go** trên điện thoại để quét mã QR hiện ra trên màn hình máy tính.
+Dự án hệ thống đặt vé du lịch tích hợp mạng xã hội, sử dụng **React Native (Expo)** cho Mobile và **Laravel 11** cho Backend.
 
 ---
 
-## 🛠 Cấu trúc dự án & Luồng xác thực
+## 🛠 Yêu cầu hệ thống (Prerequisites)
 
-### Luồng Đăng nhập/Đăng ký (Auth Flow)
-1.  **Xác thực Firebase**: Người dùng nhập email/mật khẩu, ứng dụng gọi Firebase Auth để xác thực.
-2.  **Màn hình Đồng bộ (SyncLoading)**: 
-    *   Ngay sau khi Firebase thành công, ứng dụng chuyển vào màn hình chờ.
-    *   Tại đây, ứng dụng lấy `ID Token` từ Firebase và gọi API `POST /api/auth/post/sync` sang Laravel.
-3.  **Lưu PostgreSQL**: Laravel kiểm tra token, lấy thông tin người dùng và lưu/cập nhật vào DB PostgreSQL.
-4.  **Hoàn tất**: Sau khi Backend phản hồi thành công (200 OK), người dùng mới được vào Trang chủ.
+Trước khi bắt đầu, hãy đảm bảo máy tính của bạn đã cài đặt:
+*   **Node.js** (Phiên bản 18 trở lên)
+*   **PHP** (Phiên bản 8.2 trở lên)
+*   **Composer** (Quản lý thư viện PHP)
+*   **PostgreSQL** (Cơ sở dữ liệu chính)
+*   **Expo Go** (Cài sẵn trên điện thoại Android/iOS)
 
-### Các công nghệ chính
-*   **Frontend**: React Native, Expo, React Navigation, Lucide Icons.
-*   **Backend**: Laravel 11, Firebase Admin SDK.
-*   **Database**: PostgreSQL.
-*   **Storage**: Cloudinary (Upload ảnh).
+---
 
-## ⚠️ Giải quyết lỗi thường gặp
-*   **Network Error**: Kiểm tra xem đã chạy PHP với `0.0.0.0` chưa và IP trong `apiClient.js` có khớp với `ipconfig` không.
-*   **Timeout**: Đã được cấu hình lên 60 giây trong `apiClient.js` để chờ Firebase xác thực lần đầu.
-*   **HostFunction Error**: Đảm bảo phiên bản `react-native-screens` và `reanimated` tương thích với Expo 54 (Xem hướng dẫn trong log terminal).
+## 🚀 Hướng dẫn Cài đặt (Installation)
+
+### 1. Cài đặt Backend (Laravel)
+Mở terminal tại thư mục `backend`:
+```bash
+# 1. Cài đặt các thư viện PHP
+composer install
+
+# 2. Tạo file cấu hình môi trường
+copy .env.example .env
+
+# 3. Tạo khóa ứng dụng
+php artisan key:generate
+
+# 4. Cấu hình Database trong file .env (DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD)
+
+# 5. Chạy Migration để tạo các bảng dữ liệu
+php artisan migrate
+
+# 6. Chuẩn bị file Firebase (Quan trọng)
+# - Đặt file 'firebase-service-account.json' vào thư mục backend/
+# - Cấu hình FIREBASE_PROJECT_ID trong .env
+```
+
+### 2. Cài đặt Mobile App (React Native)
+Mở terminal tại thư mục gốc của dự án Mobile:
+```bash
+# 1. Cài đặt các thư viện Node.js
+npm install
+
+# 2. Cấu hình Firebase
+# Đảm bảo file 'src/config/firebase.js' đã có đầy đủ thông tin API Key từ Firebase Console.
+```
+
+---
+
+## 📱 Hướng dẫn Kết nối & Chạy dự án
+
+### Bước 1: Khởi chạy Backend
+```bash
+cd backend
+php -S 0.0.0.0:8000 -t public
+```
+
+### Bước 2: Tìm IPv4 và Cấu hình Mobile
+1.  Gõ `ipconfig` trong terminal để tìm địa chỉ IPv4 (Ví dụ: `192.168.1.14`).
+2.  Mở file `src/api/apiClient.js` và cập nhật:
+    ```javascript
+    const IP_LAN = '192.168.1.14'; // Địa chỉ IP máy tính của bạn
+    ```
+
+### Bước 3: Chạy ứng dụng Mobile
+```bash
+npx expo start -c
+```
+*   Dùng điện thoại quét mã QR để mở ứng dụng qua **Expo Go**.
+
+---
+
+## 🔄 Luồng hoạt động của Hệ thống
+1.  **Auth**: Đăng ký/Đăng nhập bằng Firebase Auth trên điện thoại.
+2.  **Sync**: Ngay sau khi thành công, màn hình `SyncLoading` sẽ hiện ra để gọi API sang Laravel.
+3.  **Database**: Laravel xác thực Token và lưu thông tin người dùng vào **PostgreSQL**.
+4.  **Ready**: Sau khi đồng bộ xong, người dùng mới được vào màn hình chính.
+
+## 🛠 Xử lý sự cố (Troubleshooting)
+*   **Lỗi thư viện native (HostFunction)**: Nếu gặp lỗi TypeError liên quan đến boolean/string, hãy chạy lệnh: `npx expo install react-native-screens react-native-reanimated`.
+*   **Không kết nối được Server**: Kiểm tra xem điện thoại và máy tính có dùng chung WiFi không và Firewall của Windows có đang chặn port 8000 không.
 
 ---
 *Phát triển bởi Đội ngũ Social Travel Booking*
