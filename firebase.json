@@ -1,1 +1,22 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"socialtravelbooking","appId":"1:381847101639:android:1b233e080607b1f0075ee2","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"socialtravelbooking","configurations":{"android":"1:381847101639:android:1b233e080607b1f0075ee2","ios":"1:381847101639:ios:15ea3663af77d829075ee2"}}}}}}
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "socialtravelbooking",
+                    "appId": "1:381847101639:android:1b233e080607b1f0075ee2",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "socialtravelbooking",
+                    "configurations": {
+                        "android": "1:381847101639:android:1b233e080607b1f0075ee2",
+                        "ios": "1:381847101639:ios:15ea3663af77d829075ee2"
+                    }
+                }
+            }
+        }
+    }
+}
