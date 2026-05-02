@@ -1,8 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // Your web app's Firebase configuration
-// For Android and iOS, Firebase will use these settings
 const firebaseConfig = {
   apiKey: "AIzaSyDiqRkXiPH5z7N7ry9tXbsObkFARbe8XRE",
   authDomain: "socialtravelbooking.firebaseapp.com",
@@ -15,7 +15,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Auth
-export const auth = getAuth(app);
+// Initialize Firebase Auth with Persistence
+// This ensures the user stays logged in after restarting the app
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 
 export default app;
