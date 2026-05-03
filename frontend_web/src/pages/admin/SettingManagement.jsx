@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Bell, Shield, Database, Globe, Percent, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Settings, Save, Bell, Shield, Database, Globe, Percent, Loader2, Sparkles, AlertTriangle, RotateCw } from 'lucide-react';
 import adminApi from '../../api/adminApi';
 import { useNotification } from '../../contexts/NotificationContext';
 
@@ -62,9 +62,15 @@ const SettingManagement = () => {
 
     return (
         <div className="space-y-8 max-w-4xl">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Cài đặt hệ thống</h2>
-                    <p className="text-gray-500 text-sm mt-1 font-medium">Cấu hình tham số vận hành sàn và các thiết lập bảo mật.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Cài đặt hệ thống</h2>
+                        <p className="text-gray-500 text-sm mt-1 font-medium">Cấu hình tham số vận hành sàn và các thiết lập bảo mật.</p>
+                    </div>
+                    <button onClick={fetchSettings}
+                        className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-2xl shadow-sm transition-all active:scale-95 cursor-pointer">
+                        <RotateCw size={20} />
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6">

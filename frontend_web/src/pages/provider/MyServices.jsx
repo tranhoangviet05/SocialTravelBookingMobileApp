@@ -5,7 +5,7 @@ import {
     CheckCircle, AlertCircle, Image as ImageIcon,
     UploadCloud, Clock, ChevronLeft, ChevronRight,
     CalendarDays, Star, Settings2, ChevronDown, ChevronUp,
-    Bed, Users
+    Bed, Users, RotateCw
 } from 'lucide-react';
 import providerApi from '../../api/providerApi';
 import { uploadImage } from '../../utils/cloudinary';
@@ -74,8 +74,9 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
     const [showForm, setShowForm] = useState(false);
     const [confirmDel, setConfirmDel] = useState(null);
 
-    const emptyForm = { day_number: '', title: '', description: '' };
+    const emptyForm = { day_number: '', title: '', description: '', activities: [] };
     const [form, setForm] = useState(emptyForm);
+    const [activityInput, setActivityInput] = useState('');
 
     useEffect(() => {
         providerApi.getSchedules(service.id)
@@ -93,7 +94,16 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
         setForm({ ...emptyForm, day_number: (schedules.length + 1).toString() });
         setShowForm(true);
     };
-    const openEdit = (s) => { setEditItem(s); setForm({ day_number: s.day_number, title: s.title, description: s.description || '' }); setShowForm(true); };
+    const openEdit = (s) => { 
+        setEditItem(s); 
+        setForm({ 
+            day_number: s.day_number, 
+            title: s.title, 
+            description: s.description || '',
+            activities: Array.isArray(s.activities) ? s.activities : []
+        }); 
+        setShowForm(true); 
+    };
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -114,7 +124,8 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
             const payload = {
                 day_number: dayNum,
                 title: form.title,
-                description: form.description
+                description: form.description,
+                activities: form.activities
             };
             if (editItem) {
                 const res = await providerApi.updateSchedule(service.id, editItem.id, payload);
@@ -141,8 +152,8 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]" onClick={onClose}>
-            <div className="bg-white rounded-[2rem] w-[680px] max-h-[85vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]">
+            <div className="bg-white rounded-[2rem] w-[680px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-8 pt-8 pb-4 border-b border-slate-100">
                     <div>
@@ -182,7 +193,7 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
 
                 {/* Form thêm/sửa */}
                 {showForm && (
-                    <form onSubmit={handleSave} className="px-8 py-5 bg-sky-50 border-b border-sky-100">
+                    <form onSubmit={handleSave} className="px-8 py-5 bg-sky-50 border-b border-sky-100 overflow-y-auto max-h-[400px] custom-scrollbar">
                         <h4 className="text-sm font-black text-sky-700 mb-4">{editItem ? `Sửa Ngày ${editItem.day_number}` : 'Thêm ngày mới'}</h4>
                         <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ngày số *</label>
@@ -199,10 +210,60 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                         </div>
                         <div className="mt-3">
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mô tả hoạt động</label>
-                            <textarea rows={3} value={form.description}
+                            <textarea rows={2} value={form.description}
                                 onChange={e => setForm({ ...form, description: e.target.value })}
                                 className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                                placeholder="Chi tiết các hoạt động trong ngày..." />
+                                placeholder="Tóm tắt hoạt động trong ngày..." />
+                        </div>
+
+                        {/* Điểm dừng / Hoạt động chi tiết */}
+                        <div className="mt-4">
+                            <label className="block text-xs font-black text-sky-700 uppercase mb-2">Các điểm dừng / Hoạt động chi tiết</label>
+                            <div className="space-y-2 mb-3">
+                                {form.activities.map((act, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 group">
+                                        <div className="flex-1 px-4 py-2 bg-white border border-sky-100 rounded-xl text-sm font-bold text-slate-700 shadow-sm">
+                                            {act}
+                                        </div>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setForm({ ...form, activities: form.activities.filter((_, i) => i !== idx) })}
+                                            className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input 
+                                    value={activityInput}
+                                    onChange={e => setActivityInput(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (activityInput.trim()) {
+                                                setForm({ ...form, activities: [...form.activities, activityInput.trim()] });
+                                                setActivityInput('');
+                                            }
+                                        }
+                                    }}
+                                    className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                    placeholder="Thêm điểm dừng..." 
+                                />
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        if (activityInput.trim()) {
+                                            setForm({ ...form, activities: [...form.activities, activityInput.trim()] });
+                                            setActivityInput('');
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-sky-100 text-sky-600 rounded-xl text-xs font-black hover:bg-sky-200 transition-colors"
+                                >
+                                    Thêm
+                                </button>
+                            </div>
                         </div>
                         <div className="flex gap-3 mt-4">
                             <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold">Hủy</button>
@@ -214,7 +275,7 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                 )}
 
                 {/* Danh sách */}
-                <div className="flex-1 overflow-y-auto px-8 py-5 space-y-3">
+                <div className="flex-1 overflow-y-auto px-8 py-5 space-y-3 custom-scrollbar">
                     {loading ? (
                         <div className="py-12 flex justify-center"><Loader2 className="animate-spin text-sky-500" size={32} /></div>
                     ) : schedules.length === 0 ? (
@@ -233,6 +294,15 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                                         {s.time && <span className="text-xs font-bold text-sky-500 bg-sky-50 px-2 py-0.5 rounded-lg">{s.time}</span>}
                                     </div>
                                     {s.description && <p className="text-xs text-slate-500 mt-1 leading-relaxed">{s.description}</p>}
+                                    {Array.isArray(s.activities) && s.activities.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-1.5">
+                                            {s.activities.map((act, idx) => (
+                                                <span key={idx} className="px-2.5 py-1 bg-white border border-sky-100 text-[10px] font-black text-sky-600 rounded-lg shadow-sm">
+                                                    📍 {act}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                     <button onClick={() => openEdit(s)} className="p-1.5 hover:bg-sky-100 text-slate-400 hover:text-sky-600 rounded-xl"><Edit3 size={14} /></button>
@@ -332,8 +402,8 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]" onClick={onClose}>
-            <div className="bg-white rounded-[2rem] w-[750px] max-h-[90vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]">
+            <div className="bg-white rounded-[2rem] w-[750px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-8 pt-8 pb-4 border-b border-slate-100">
                     <div>
@@ -402,7 +472,7 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
                 )}
 
                 {/* List */}
-                <div className="flex-1 overflow-y-auto px-8 py-5 space-y-4">
+                <div className="flex-1 overflow-y-auto px-8 py-5 space-y-4 custom-scrollbar">
                     {loading ? (
                         <div className="py-12 flex justify-center"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>
                     ) : roomTypes.length === 0 ? (
@@ -484,8 +554,8 @@ const AmenitiesModal = ({ service, onClose, showToast, onSaved }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]" onClick={onClose}>
-            <div className="bg-white rounded-[2rem] w-[720px] max-h-[85vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]">
+            <div className="bg-white rounded-[2rem] w-[720px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-8 pt-8 pb-4 border-b border-slate-100">
                     <div>
@@ -498,7 +568,7 @@ const AmenitiesModal = ({ service, onClose, showToast, onSaved }) => {
                     <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl"><X size={20} /></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 custom-scrollbar">
                     <div className="grid grid-cols-2 gap-6">
                         {/* Bao gồm */}
                         <div>
@@ -523,17 +593,19 @@ const AmenitiesModal = ({ service, onClose, showToast, onSaved }) => {
                             />
                         </div>
                     </div>
-                    {/* Tiện nghi */}
-                    <div>
-                        <label className="block text-xs font-black uppercase tracking-wider mb-2 text-sky-600">🌟 Tiện nghi (Khách sạn/Homestay)</label>
-                        <p className="text-[10px] text-slate-400 mb-2 font-medium">Mỗi mục một dòng</p>
-                        <textarea rows={5}
-                            value={form.amenities}
-                            onChange={e => setForm(f => ({ ...f, amenities: e.target.value }))}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                            placeholder={"WiFi miễn phí\nHồ bơi\nSân tập gym\nĐiều hòa"}
-                        />
-                    </div>
+                    {/* Tiện nghi - Ẩn nếu là tour hoặc phương tiện */}
+                    {(service.type !== 'tour' && service.type !== 'vehicle') && (
+                        <div>
+                            <label className="block text-xs font-black uppercase tracking-wider mb-2 text-sky-600">🌟 Tiện nghi (Khách sạn/Homestay)</label>
+                            <p className="text-[10px] text-slate-400 mb-2 font-medium">Mỗi mục một dòng</p>
+                            <textarea rows={5}
+                                value={form.amenities}
+                                onChange={e => setForm(f => ({ ...f, amenities: e.target.value }))}
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                placeholder={"WiFi miễn phí\nHồ bơi\nSân tập gym\nĐiều hòa"}
+                            />
+                        </div>
+                    )}
                     {/* Tags */}
                     <div>
                         <label className="block text-xs font-black uppercase tracking-wider mb-2 text-purple-600">🏷️ Tags (từ khóa tìm kiếm)</label>
@@ -762,22 +834,30 @@ const MyServices = () => {
                     </button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input
-                            type="text" placeholder="Tìm kiếm dịch vụ..."
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-medium shadow-sm"
+                            type="text"
+                            placeholder="Tìm kiếm dịch vụ..."
+                            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[22px] shadow-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-200 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-medium"
                             value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex gap-2">
-                        {['all', 'tour', 'hotel', 'homestay', 'vehicle'].map(opt => (
-                            <button key={opt} onClick={() => setTypeFilter(opt)} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all ${typeFilter === opt ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-100'}`}>
-                                {opt === 'all' ? 'Tất cả' : opt.charAt(0).toUpperCase() + opt.slice(1)}
-                            </button>
-                        ))}
+                    <div className="flex items-center gap-2">
+                        <div className="flex bg-white p-1 border border-slate-100 rounded-[22px] shadow-sm">
+                            {['all', 'tour', 'hotel', 'homestay', 'vehicle'].map(opt => (
+                                <button key={opt} onClick={() => setTypeFilter(opt)}
+                                    className={`px-4 py-2.5 rounded-[18px] text-xs font-bold transition-all ${typeFilter === opt ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}>
+                                    {opt === 'all' ? 'Tất cả' : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                        <button onClick={() => doFetch(1)}
+                            className="w-14 h-14 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[22px] shadow-sm transition-all active:scale-95 cursor-pointer">
+                            <RotateCw size={20} />
+                        </button>
                     </div>
                 </div>
 
@@ -872,8 +952,8 @@ const MyServices = () => {
 
             {/* Modal Tạo/Sửa dịch vụ */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100]" onClick={() => setShowModal(false)}>
-                    <div className="bg-white rounded-[2.5rem] p-8 w-[720px] max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100]">
+                    <div className="bg-white rounded-[2.5rem] p-8 w-[720px] max-h-[90vh] overflow-y-auto shadow-2xl custom-scrollbar">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-xl font-black text-slate-900">{editMode ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'}</h3>
                             <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-xl"><X size={20} /></button>
@@ -929,37 +1009,48 @@ const MyServices = () => {
                                     </select>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className={`grid ${form.type === 'tour' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                                     <select required value={form.location_id} onChange={e => setForm({ ...form, location_id: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none">
                                         <option value="">-- Địa điểm --</option>
                                         {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                                     </select>
-                                    <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Địa chỉ chi tiết" />
+                                    {form.type !== 'tour' && (
+                                        <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Địa chỉ chi tiết" />
+                                    )}
                                 </div>
 
                                 {form.type === 'tour' && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="flex items-center gap-2">
-                                            <input type="number" value={form.duration_days} onChange={e => {
+                                            <input type="number" min="0" value={form.duration_days} onChange={e => {
                                                 const days = e.target.value;
-                                                setForm({ ...form, duration_days: days, duration_nights: days && Number(days) > 0 ? String(Number(days) - 1) : form.duration_nights });
+                                                const val = days === '' ? '' : Math.max(0, parseInt(days) || 0);
+                                                setForm({ 
+                                                    ...form, 
+                                                    duration_days: val, 
+                                                    duration_nights: val !== '' && Number(form.duration_nights) >= Number(val) ? String(Math.max(0, Number(val) - 1)) : form.duration_nights 
+                                                });
                                             }} className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Số ngày (VD: 3)" />
                                             <span className="text-xs font-bold text-slate-400">Ngày</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <input type="number" value={form.duration_nights} onChange={e => setForm({ ...form, duration_nights: e.target.value })} className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Số đêm (VD: 2)" />
+                                            <input type="number" min="0" max={form.duration_days || undefined} value={form.duration_nights} onChange={e => {
+                                                const nights = e.target.value;
+                                                const val = nights === '' ? '' : Math.min(Number(form.duration_days || 0), Math.max(0, parseInt(nights) || 0));
+                                                setForm({ ...form, duration_nights: val });
+                                            }} className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Số đêm (VD: 2)" />
                                             <span className="text-xs font-bold text-slate-400">Đêm</span>
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="grid grid-cols-3 gap-4">
-                                    <input required type="number" value={form.base_price} onChange={e => setForm({ ...form, base_price: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Giá (VNĐ)" />
+                                    <input required type="number" min="0" value={form.base_price} onChange={e => setForm({ ...form, base_price: Math.max(0, e.target.value) })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Giá (VNĐ)" />
                                     <select value={form.price_unit} onChange={e => setForm({ ...form, price_unit: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none">
                                         <option value="per_person">/ người</option>
-                                        <option value="per_room">/ phòng</option>
+                                        {(form.type !== 'tour' && form.type !== 'vehicle') && <option value="per_room">/ phòng</option>}
                                     </select>
-                                    <input type="number" value={form.max_guests} onChange={e => setForm({ ...form, max_guests: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Khách tối đa" />
+                                    <input type="number" min="1" value={form.max_guests} onChange={e => setForm({ ...form, max_guests: Math.max(1, e.target.value) })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Khách tối đa" />
                                 </div>
 
                                 <textarea rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold resize-none focus:outline-none" placeholder="Mô tả dịch vụ..." />
@@ -1006,6 +1097,21 @@ const MyServices = () => {
 
             {confirmDelete && <ConfirmModal message={`Xóa dịch vụ "${confirmDelete.name}"?`} onConfirm={handleDeleteConfirm} onCancel={() => setConfirmDelete(null)} />}
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #e2e8f0;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #cbd5e1;
+                }
+            `}</style>
         </>
     );
 };

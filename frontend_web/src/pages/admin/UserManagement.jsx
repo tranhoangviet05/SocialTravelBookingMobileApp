@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Search, Shield, User, Ban, CheckCircle,
+    Search, Shield, User, Ban, CheckCircle, RotateCw,
     Mail, Settings2, Clock, Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import adminApi from '../../api/adminApi';
@@ -48,10 +48,10 @@ const UserManagement = () => {
     const lockRef = React.useRef(null);
 
     const doFetch = useCallback((page = 1, search = '') => {
-        fetchUsers(true, page, { search: search || undefined });
+        fetchUsers(true, page, { search: search || undefined, role: 'tourist' });
     }, [fetchUsers]);
 
-    useEffect(() => { doFetch(1, ''); setCurrentPage(1); }, []);
+    useEffect(() => { doFetch(1, ''); setCurrentPage(1); }, [doFetch]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -66,23 +66,7 @@ const UserManagement = () => {
         doFetch(page, searchTerm);
     };
 
-    const handleRoleChange = async (userId, newRole) => {
-        if (lockRef.current === userId) return;
-        lockRef.current = userId;
-        setUpdatingId(userId);
-        try {
-            const res = await adminApi.updateUserRole(userId, newRole);
-            if (res.success) {
-                toast.success('Cập nhật vai trò thành công');
-                setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-            }
-        } catch (e) {
-            toast.error(e.response?.data?.message || 'Lỗi khi cập nhật vai trò');
-        } finally {
-            setUpdatingId(null);
-            setTimeout(() => { lockRef.current = null; }, 500);
-        }
-    };
+
 
     const handleStatusChange = async (userId, newStatus) => {
         setUpdatingId(userId);
@@ -117,33 +101,39 @@ const UserManagement = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Người dùng</h2>
-                    <p className="text-gray-500 text-sm mt-1 font-medium">Xem và quản lý tất cả tài khoản trong hệ thống.</p>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Quản lý Khách du lịch</h2>
+                    <p className="text-gray-500 text-sm mt-1 font-medium">Xem và quản lý tất cả tài khoản khách du lịch trong hệ thống.</p>
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1 w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                     <input
                         type="text" placeholder="Tìm theo tên, email..."
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all font-medium"
+                        className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[22px] shadow-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-200 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-medium"
                         value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                     />
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => doFetch(currentPage, searchTerm)}
+                        className="w-14 h-14 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[22px] shadow-sm transition-all active:scale-95 cursor-pointer">
+                        <RotateCw size={20} />
+                    </button>
                 </div>
             </div>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2.5rem] border border-gray-100">
                     <Loader2 className="w-10 h-10 text-sky-500 animate-spin mb-4" />
-                    <p className="text-slate-400 font-bold">Đang tải danh sách người dùng...</p>
+                    <p className="text-slate-400 font-bold">Đang tải danh sách khách du lịch...</p>
                 </div>
             ) : users.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2.5rem] border border-gray-100">
                     <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 mb-4">
                         <User size={40} />
                     </div>
-                    <p className="text-slate-500 font-medium">Không có người dùng nào.</p>
+                    <p className="text-slate-500 font-medium">Không có khách du lịch nào.</p>
                 </div>
             ) : (
                 <>
@@ -178,26 +168,11 @@ const UserManagement = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-8 py-5">
-                                                <div className="flex flex-wrap gap-2">
-                                                    <select
-                                                        value={user.role}
-                                                        disabled={updatingId === user.id}
-                                                        onChange={(e) => {
-                                                            if (e.target.value !== user.role) handleRoleChange(user.id, e.target.value);
-                                                        }}
-                                                        className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border-0 bg-slate-50 text-slate-600 focus:ring-2 focus:ring-sky-500/20 cursor-pointer outline-none transition-all
-                                                            ${user.role === 'admin' ? 'text-rose-600 bg-rose-50' : ''}
-                                                            ${user.role === 'provider' ? 'text-emerald-600 bg-emerald-50' : ''}
-                                                        `}
-                                                    >
-                                                        <option value="tourist">Tourist</option>
-                                                        <option value="provider">Provider</option>
-                                                        <option value="admin">Admin</option>
-                                                    </select>
-                                                    {updatingId === user.id && <Loader2 size={14} className="animate-spin text-sky-500 self-center" />}
-                                                </div>
-                                            </td>
+                                             <td className="px-8 py-5">
+                                                 <div className="flex flex-wrap gap-2">
+                                                     {getRoleBadge(user.role)}
+                                                 </div>
+                                             </td>
                                             <td className="px-8 py-5">{getStatusBadge(user.status)}</td>
                                             <td className="px-8 py-5 text-right">
                                                 <div className="flex items-center justify-end gap-2">

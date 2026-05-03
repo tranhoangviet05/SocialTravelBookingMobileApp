@@ -19,6 +19,7 @@ class UserController extends Controller
         $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 8);
         $search = $request->get('search');
+        $role = $request->get('role');
 
         $query = User::orderBy('created_at', 'desc');
 
@@ -27,6 +28,10 @@ class UserController extends Controller
                 $q->where('display_name', 'ilike', "%{$search}%")
                   ->orWhere('email', 'ilike', "%{$search}%");
             });
+        }
+
+        if ($role) {
+            $query->where('role', $role);
         }
 
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);

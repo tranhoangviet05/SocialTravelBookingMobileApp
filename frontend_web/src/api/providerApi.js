@@ -2,7 +2,7 @@ import axios from './axios';
 
 const providerApi = {
     // Setup
-    setupProfile: () => axios.post('/provider/setup-profile'),
+    setupProfile: (data) => axios.post('/provider/setup-profile', data),
 
     // Dashboard
     getStats: () => axios.get('/provider/dashboard/stats'),

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-    CalendarCheck, Bell, Wallet, Star, Plus, Loader2, Package, AlertCircle, ArrowRight
+    CalendarCheck, Bell, Wallet, Star, Plus, Loader2, Package, AlertCircle, ArrowRight, RotateCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import NoProviderProfile from '../../components/provider/NoProviderProfile';
 import { useProviderData } from '../../contexts/ProviderDataContext';
 
 const ProviderDashboard = () => {
@@ -15,24 +14,11 @@ const ProviderDashboard = () => {
         fetchStats();
     }, [fetchStats]);
 
-    if (loading) {
+    if (loading || !stats) {
         return (
             <div className="flex flex-col items-center justify-center py-32">
                 <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
                 <p className="text-slate-400 font-bold">Đang tải dữ liệu...</p>
-            </div>
-        );
-    }
-
-    // Nếu chưa có Provider Profile
-    if (!stats || !stats.has_profile) {
-        return (
-            <div className="space-y-8">
-                <div>
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">Bảng điều khiển</h2>
-                    <p className="text-slate-500 font-medium mt-1">Chào mừng bạn đến với Cổng Nhà cung cấp!</p>
-                </div>
-                <NoProviderProfile onProfileCreated={() => window.location.reload()} />
             </div>
         );
     }
@@ -78,12 +64,18 @@ const ProviderDashboard = () => {
                         Chào mừng <span className="text-emerald-600 font-black">{stats?.business_name || 'Nhà cung cấp'}</span>, đây là hiệu suất kinh doanh của bạn!
                     </p>
                 </div>
-                <button
-                    onClick={() => navigate('/provider/services')}
-                    className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-2xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
-                >
-                    <Plus size={18} /> Thêm dịch vụ
-                </button>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => fetchStats()}
+                        className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-2xl shadow-sm transition-all active:scale-95 cursor-pointer">
+                        <RotateCw size={20} />
+                    </button>
+                    <button
+                        onClick={() => navigate('/provider/services')}
+                        className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-2xl text-sm font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                    >
+                        <Plus size={18} /> Thêm dịch vụ
+                    </button>
+                </div>
             </div>
 
             {/* Stats cards */}
@@ -128,7 +120,7 @@ const ProviderDashboard = () => {
                             <div className="text-center flex-shrink-0">
                                 <div className="text-6xl font-black text-emerald-600">{stats?.avg_rating || '—'}</div>
                                 <div className="flex items-center justify-center gap-1 mt-2">
-                                    {[1,2,3,4,5].map(i => (
+                                    {[1, 2, 3, 4, 5].map(i => (
                                         <Star key={i} size={18} className={i <= Math.round(stats?.avg_rating || 0) ? 'text-amber-400 fill-amber-400' : 'text-slate-200'} />
                                     ))}
                                 </div>
@@ -136,7 +128,7 @@ const ProviderDashboard = () => {
                             </div>
                             <div className="flex-1 border-l border-slate-100 pl-8">
                                 <div className="space-y-3">
-                                    {[5,4,3,2,1].map(star => (
+                                    {[5, 4, 3, 2, 1].map(star => (
                                         <div key={star} className="flex items-center gap-3">
                                             <span className="text-xs font-bold text-slate-400 w-4">{star}</span>
                                             <Star size={12} className="text-amber-400 fill-amber-400 flex-shrink-0" />
@@ -194,17 +186,6 @@ const ProviderDashboard = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Provider Status Banner */}
-            {stats?.provider_status && stats.provider_status !== 'active' && (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center gap-4">
-                    <AlertCircle size={24} className="text-amber-500 flex-shrink-0" />
-                    <div>
-                        <p className="text-amber-800 font-bold text-sm">Tài khoản đang chờ phê duyệt</p>
-                        <p className="text-amber-600 text-xs mt-0.5">Tài khoản nhà cung cấp của bạn đang được Admin xem xét. Một số tính năng có thể bị hạn chế.</p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

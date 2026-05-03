@@ -26,8 +26,8 @@ import { useAuth } from '../../contexts/AuthContext';
 const DashboardManagement = () => {
     const auth = useAuth();
     const currentUser = auth ? auth.currentUser : null;
-    const { 
-        stats: dashboardData, fetchStats, loadingStates 
+    const {
+        stats: dashboardData, fetchStats, loadingStates
     } = useAdminData();
 
     const loading = loadingStates.stats && !dashboardData;
@@ -179,11 +179,10 @@ const DashboardManagement = () => {
                         <h3 className="text-xl font-black text-slate-900">Phân tích Doanh thu</h3>
                         <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">Dữ liệu 6 tháng gần nhất (Triệu VND)</p>
                     </div>
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
-                        (stats?.revenue_growth || 0) >= 0
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                            : 'bg-rose-50 text-rose-600 border-rose-100'
-                    }`}>
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${(stats?.revenue_growth || 0) >= 0
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        : 'bg-rose-50 text-rose-600 border-rose-100'
+                        }`}>
                         {(stats?.revenue_growth || 0) >= 0
                             ? <TrendingUp size={16} />
                             : <TrendingDown size={16} />
@@ -192,7 +191,7 @@ const DashboardManagement = () => {
                     </div>
                 </div>
 
-                <div className="h-[350px] w-full">
+                <div className="h-96 w-full">
                     {revenue_chart && revenue_chart.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={revenue_chart}>

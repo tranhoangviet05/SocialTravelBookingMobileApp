@@ -1,21 +1,54 @@
-import React, { useState } from 'react';
-import { useLocation, Link, Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, Link, Outlet, Navigate } from 'react-router-dom';
 import {
-    LayoutDashboard, ChevronRight, RefreshCw
+    LayoutDashboard, ChevronRight, RefreshCw, Loader2
 } from 'lucide-react';
 import ProviderSidebar from './ProviderSidebar';
 import { useProviderData } from '../../contexts/ProviderDataContext';
 
 const ProviderLayout = () => {
     const location = useLocation();
-    const { reloadAll } = useProviderData();
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    const { stats, fetchStats, loadingStates } = useProviderData();
 
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        await reloadAll();
-        setIsRefreshing(false);
-    };
+    useEffect(() => {
+        fetchStats();
+    }, [fetchStats]);
+
+    // Đang tải thông tin quan trọng
+    if (loadingStates.stats && !stats) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                    <p className="text-slate-400 font-bold text-sm">Đang xác thực hồ sơ...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const isSetupPage = location.pathname === '/provider/setup';
+    const isWaitingPage = location.pathname === '/provider/waiting';
+
+    // Luồng Logic Guard:
+    // 1. Chưa có hồ sơ -> Bắt buộc vào /provider/setup
+    if (stats && !stats.has_profile && !isSetupPage) {
+        return <Navigate to="/provider/setup" replace />;
+    }
+
+    // 2. Có hồ sơ nhưng chưa được duyệt (pending/rejected/suspended) -> Vào /provider/waiting
+    if (stats && stats.has_profile && stats.provider_status !== 'approved' && !isWaitingPage && !isSetupPage) {
+        return <Navigate to="/provider/waiting" replace />;
+    }
+
+    // 3. Đã được duyệt mà vào lại trang setup/waiting -> Về dashboard
+    if (stats && stats.provider_status === 'approved' && (isSetupPage || isWaitingPage)) {
+        return <Navigate to="/provider/dashboard" replace />;
+    }
+
+    // Nếu là trang Onboarding (Setup/Waiting) -> Hiển thị Full Page (không sidebar)
+    if (isSetupPage || isWaitingPage) {
+        return <Outlet />;
+    }
 
     const getBreadcrumbs = () => {
         const pathnames = location.pathname.split('/').filter((x) => x);
@@ -55,16 +88,6 @@ const ProviderLayout = () => {
                             <LayoutDashboard size={18} />
                             {getBreadcrumbs()}
                         </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={handleRefresh}
-                            disabled={isRefreshing}
-                            className={`flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-50 ${isRefreshing ? 'cursor-not-allowed' : ''}`}
-                        >
-                            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-                            {isRefreshing ? 'Đang tải...' : 'Làm mới dữ liệu'}
-                        </button>
                     </div>
                 </header>
                 <main className="flex-1 p-10 animate-[fadeIn_0.4s_ease-out]">

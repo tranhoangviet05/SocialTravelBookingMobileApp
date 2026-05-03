@@ -16,7 +16,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Eye,
-    AlertCircle
+    AlertCircle,
+    RotateCw
 } from 'lucide-react';
 import AdminTable from '../../components/admin/AdminTable';
 import adminApi from '../../api/adminApi';
@@ -106,6 +107,7 @@ const ProviderManagement = () => {
             case 'pending': return 'text-amber-600 bg-amber-50 border-amber-100';
             case 'rejected': return 'text-rose-600 bg-rose-50 border-rose-100';
             case 'suspended': return 'text-gray-600 bg-gray-50 border-gray-100';
+            case 'not_initialized': return 'text-slate-400 bg-slate-50 border-slate-100 italic';
             default: return 'text-gray-600 bg-gray-50 border-gray-100';
         }
     };
@@ -116,6 +118,7 @@ const ProviderManagement = () => {
             case 'pending': return 'Chờ duyệt';
             case 'rejected': return 'Bị từ chối';
             case 'suspended': return 'Tạm khóa';
+            case 'not_initialized': return 'Chưa khởi tạo';
             default: return status;
         }
     };
@@ -137,28 +140,35 @@ const ProviderManagement = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-col md:flex-row gap-4">
-                    <form onSubmit={handleSearch} className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input
                             type="text"
                             placeholder="Tìm doanh nghiệp, người đại diện, email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:shadow-md transition-all font-medium"
+                            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[22px] shadow-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-200 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-medium"
                         />
-                    </form>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="px-6 py-3.5 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-slate-600 focus:outline-none cursor-pointer"
-                    >
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="pending">Chờ phê duyệt</option>
-                        <option value="approved">Đã phê duyệt</option>
-                        <option value="rejected">Bị từ chối</option>
-                        <option value="suspended">Tạm khóa</option>
-                    </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="h-14 px-6 bg-white border border-slate-100 rounded-[22px] text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 cursor-pointer shadow-sm transition-all"
+                        >
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="pending">Chờ phê duyệt</option>
+                            <option value="approved">Đã phê duyệt</option>
+                            <option value="rejected">Bị từ chối</option>
+                            <option value="suspended">Tạm khóa</option>
+                            <option value="not_initialized">Chưa khởi tạo hồ sơ</option>
+                        </select>
+                        <button onClick={() => fetchProviders(true, 1, { search: searchTerm, status: filterStatus })}
+                            className="w-14 h-14 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[22px] shadow-sm transition-all active:scale-95 cursor-pointer">
+                            <RotateCw size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Table */}
@@ -210,19 +220,29 @@ const ProviderManagement = () => {
                                     <td className="px-8 py-5 text-right">
                                         <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
-                                                onClick={() => handleViewDetail(p.id)}
-                                                className="p-2 text-gray-400 hover:text-sky-500 hover:bg-sky-50 rounded-xl transition-all"
-                                                title="Xem chi tiết"
+                                                onClick={() => {
+                                                    if (!p.id) {
+                                                        toast?.info?.('Đối tác này chưa khởi tạo hồ sơ.');
+                                                        return;
+                                                    }
+                                                    handleViewDetail(p.id);
+                                                }}
+                                                className={`p-2 rounded-xl transition-all ${!p.id ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-sky-500 hover:bg-sky-50'}`}
+                                                title={!p.id ? 'Chưa có hồ sơ' : 'Xem chi tiết'}
                                             >
                                                 <Eye size={18} />
                                             </button>
                                             <button
                                                 onClick={() => {
+                                                    if (p.status === 'not_initialized') {
+                                                        toast?.warning?.('Đối tác chưa cung cấp thông tin hồ sơ nên không thể xét duyệt.');
+                                                        return;
+                                                    }
                                                     setStatusModal({ open: true, provider: p });
                                                     setNewStatus(p.status);
                                                 }}
-                                                className="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
-                                                title="Cập nhật trạng thái"
+                                                className={`p-2 rounded-xl transition-all ${p.status === 'not_initialized' ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-emerald-500 hover:bg-emerald-50'}`}
+                                                title={p.status === 'not_initialized' ? 'Chưa có hồ sơ' : 'Cập nhật trạng thái'}
                                             >
                                                 <ShieldCheck size={18} />
                                             </button>
@@ -268,7 +288,7 @@ const ProviderManagement = () => {
             {/* Status Modal */}
             {statusModal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setStatusModal({ open: false, provider: null })} />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-[modalIn_0.3s_ease-out]">
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-6">
@@ -352,7 +372,7 @@ const ProviderManagement = () => {
             {/* Detail Modal */}
             {detailModal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDetailModal({ open: false, provider: null, loading: false })} />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <div className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-[modalIn_0.3s_ease-out]">
                         <div className="p-10">
                             <div className="flex items-center justify-between mb-8">

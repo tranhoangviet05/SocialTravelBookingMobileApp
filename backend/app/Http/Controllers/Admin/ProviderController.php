@@ -17,30 +17,65 @@ class ProviderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProviderProfile::with(['user:id,display_name,email,avatar_url', 'approver:id,display_name']);
+        // Lấy tất cả User có role là provider, kèm theo hồ sơ nếu có
+        $query = User::where('role', 'provider')
+            ->with(['providerProfile.approver:id,display_name'])
+            ->leftJoin('provider_profiles', 'users.id', '=', 'provider_profiles.user_id')
+            ->select(
+                'users.id as user_id',
+                'users.display_name',
+                'users.email',
+                'users.created_at as user_created_at',
+                'provider_profiles.id as profile_id',
+                'provider_profiles.business_name',
+                'provider_profiles.business_type',
+                'provider_profiles.status',
+                'provider_profiles.address',
+                'provider_profiles.created_at as profile_created_at'
+            );
 
         // Lọc theo status
         if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
+            if ($request->status === 'not_initialized') {
+                $query->whereNull('provider_profiles.id');
+            } else {
+                $query->where('provider_profiles.status', $request->status);
+            }
         }
 
         // Tìm kiếm theo tên doanh nghiệp hoặc email user
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('business_name', 'ilike', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('display_name', 'ilike', "%{$search}%")
-                         ->orWhere('email', 'ilike', "%{$search}%");
-                  });
+                $q->where('provider_profiles.business_name', 'ilike', "%{$search}%")
+                  ->orWhere('users.display_name', 'ilike', "%{$search}%")
+                  ->orWhere('users.email', 'ilike', "%{$search}%");
             });
         }
 
-        $providers = $query->orderBy('created_at', 'desc')->paginate($request->get('per_page', 20));
+        $providers = $query->orderBy('users.created_at', 'desc')->paginate($request->get('per_page', 20));
+
+        // Format lại dữ liệu trả về để Frontend dễ xử lý
+        $formattedData = collect($providers->items())->map(function ($item) {
+            return [
+                'id' => $item->profile_id, // ID hồ sơ (null nếu chưa tạo)
+                'user_id' => $item->user_id,
+                'business_name' => $item->business_name ?? 'Chưa khởi tạo',
+                'business_type' => $item->business_type,
+                'status' => $item->profile_id ? $item->status : 'not_initialized',
+                'address' => $item->address,
+                'created_at' => $item->profile_created_at ?? $item->user_created_at,
+                'user' => [
+                    'id' => $item->user_id,
+                    'display_name' => $item->display_name,
+                    'email' => $item->email,
+                ]
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'data' => $providers->items(),
+            'data' => $formattedData,
             'meta' => [
                 'current_page' => $providers->currentPage(),
                 'last_page' => $providers->lastPage(),

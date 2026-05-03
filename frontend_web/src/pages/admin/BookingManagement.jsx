@@ -13,7 +13,8 @@ import {
     ChevronLeft,
     ChevronRight,
     X,
-    AlertCircle
+    AlertCircle,
+    RotateCw
 } from 'lucide-react';
 import AdminTable from '../../components/admin/AdminTable';
 import adminApi from '../../api/adminApi';
@@ -162,39 +163,45 @@ const BookingManagement = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <form onSubmit={handleSearch} className="relative md:col-span-2">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input
                             type="text"
                             placeholder="Tìm mã đặt chỗ, khách hàng, dịch vụ..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all font-medium"
+                            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[22px] shadow-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-200 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-medium"
                         />
-                    </form>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
-                    >
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="pending">Chờ xử lý</option>
-                        <option value="confirmed">Đã xác nhận</option>
-                        <option value="ongoing">Đang diễn ra</option>
-                        <option value="completed">Hoàn thành</option>
-                        <option value="cancelled">Đã hủy</option>
-                    </select>
-                    <select
-                        value={filterPayment}
-                        onChange={(e) => setFilterPayment(e.target.value)}
-                        className="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none cursor-pointer"
-                    >
-                        <option value="">Tất cả thanh toán</option>
-                        <option value="pending">Chờ thanh toán</option>
-                        <option value="paid">Đã thanh toán</option>
-                        <option value="refunded">Đã hoàn tiền</option>
-                    </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="h-14 px-4 bg-white border border-slate-100 rounded-[22px] text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 cursor-pointer shadow-sm transition-all"
+                        >
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="ongoing">Đang diễn ra</option>
+                            <option value="completed">Hoàn thành</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                        <select
+                            value={filterPayment}
+                            onChange={(e) => setFilterPayment(e.target.value)}
+                            className="h-14 px-4 bg-white border border-slate-100 rounded-[22px] text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 cursor-pointer shadow-sm transition-all"
+                        >
+                            <option value="">Tất cả thanh toán</option>
+                            <option value="pending">Chờ thanh toán</option>
+                            <option value="paid">Đã thanh toán</option>
+                            <option value="refunded">Đã hoàn tiền</option>
+                        </select>
+                        <button onClick={() => fetchBookings(meta.current_page)}
+                            className="w-14 h-14 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[22px] shadow-sm transition-all active:scale-95 cursor-pointer">
+                            <RotateCw size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Table */}
@@ -295,7 +302,7 @@ const BookingManagement = () => {
             {/* Status Update Modal */}
             {statusModal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setStatusModal({ open: false, booking: null })} />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-[modalIn_0.3s_ease-out]">
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-6">
@@ -358,7 +365,7 @@ const BookingManagement = () => {
             {/* Detail Modal */}
             {detailModal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDetailModal({ open: false, booking: null, loading: false })} />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-[modalIn_0.3s_ease-out] max-h-[80vh] overflow-y-auto">
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-6">

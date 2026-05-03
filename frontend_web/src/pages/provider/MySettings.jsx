@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useProviderData } from '../../contexts/ProviderDataContext';
 import { 
     Store, MapPin, Briefcase, Save, Loader2, 
-    CheckCircle, AlertCircle, Building2, UserCircle
+    CheckCircle, AlertCircle, Building2, UserCircle, RotateCw
 } from 'lucide-react';
 import providerApi from '../../api/providerApi';
 
@@ -92,6 +92,10 @@ const MySettings = () => {
                         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Cài đặt của hàng</h2>
                         <p className="text-gray-500 text-sm mt-1 font-medium">Quản lý định danh và thông tin kinh doanh của bạn.</p>
                     </div>
+                    <button onClick={() => fetchSettings()}
+                        className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-2xl shadow-sm transition-all active:scale-95 cursor-pointer">
+                        <RotateCw size={20} />
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

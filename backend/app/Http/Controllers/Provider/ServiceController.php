@@ -200,16 +200,46 @@ class ServiceController extends Controller
             'images.*' => 'url'
         ]);
 
-        // Khi sửa, đẩy về trạng thái chờ duyệt lại (tùy chọn, ở đây tôi giữ nguyên hoặc set lại)
+        // Khi sửa, đẩy về trạng thái chờ duyệt lại
         $validated['status'] = 'pending_review';
 
-        $service->update($validated);
+        try {
+            DB::transaction(function () use ($validated, $service) {
+                // 1. Tách images ra khỏi validated
+                $images = $validated['images'] ?? null;
+                unset($validated['images']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cập nhật dịch vụ thành công, vui lòng chờ Admin duyệt lại.',
-            'data' => $service
-        ]);
+                // 2. Cập nhật các thông tin cơ bản
+                $service->update($validated);
+
+                // 3. Nếu có gửi danh sách ảnh mới, cập nhật lại bảng service_media
+                if ($images !== null) {
+                    // Xóa ảnh cũ (hoặc có thể giữ lại tùy logic, ở đây là ghi đè danh sách mới)
+                    $service->media()->delete();
+                    
+                    foreach ($images as $index => $url) {
+                        \App\Models\ServiceMedia::create([
+                            'service_id' => $service->id,
+                            'url' => $url,
+                            'is_cover' => ($index === 0),
+                            'sort_order' => $index,
+                            'type' => 'image'
+                        ]);
+                    }
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật dịch vụ thành công, vui lòng chờ Admin duyệt lại.',
+                'data' => $service->load('media')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi cập nhật dịch vụ: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

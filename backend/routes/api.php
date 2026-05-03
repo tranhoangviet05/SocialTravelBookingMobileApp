@@ -237,22 +237,7 @@ Route::middleware('firebase.auth')->group(function () {
     Route::prefix('provider')->middleware('role:provider')->group(function () {
 
         // --- Tự tạo ProviderProfile nếu chưa có (gọi lần đầu) ---
-        Route::post('/setup-profile', function (\Illuminate\Http\Request $request) {
-            $user = $request->input('user');
-            $profile = \App\Models\ProviderProfile::firstOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'business_name' => ($user->display_name ?? 'Nhà cung cấp') . "'s Business",
-                    'status'        => 'pending',
-                    'address'       => '',
-                ]
-            );
-            return response()->json([
-                'success' => true,
-                'message' => 'Hồ sơ nhà cung cấp đã được khởi tạo. Vui lòng chờ Admin phê duyệt.',
-                'data'    => $profile
-            ]);
-        });
+        Route::post('/setup-profile', [\App\Http\Controllers\Provider\ProfileController::class, 'setup']);
 
         // --- Dashboard & Thống kê ---
         Route::get('/dashboard/stats', [\App\Http\Controllers\Provider\DashboardController::class, 'stats']);

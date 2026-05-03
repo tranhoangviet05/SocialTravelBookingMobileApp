@@ -19,7 +19,16 @@ import {
     Trash2,
     X,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    RotateCw,
+    Clock,
+    FileText,
+    Image as ImageIcon,
+    ShieldCheck,
+    Info,
+    Calendar,
+    Users,
+    Map
 } from 'lucide-react';
 import AdminTable from '../../components/admin/AdminTable';
 import adminApi from '../../api/adminApi';
@@ -34,6 +43,7 @@ const ServiceManagement = () => {
     const [filterStatus, setFilterStatus] = useState('');
     const [actionMenuId, setActionMenuId] = useState(null);
     const [statusModal, setStatusModal] = useState({ open: false, service: null });
+    const [detailModal, setDetailModal] = useState({ open: false, service: null, loading: false });
     const [newStatus, setNewStatus] = useState('');
     const [rejectionReason, setRejectionReason] = useState('');
     const [updating, setUpdating] = useState(false);
@@ -115,6 +125,33 @@ const ServiceManagement = () => {
         }
     };
 
+    const handleViewDetail = async (id) => {
+        setDetailModal({ open: true, service: null, loading: true });
+        try {
+            console.log('Fetching service detail for ID:', id);
+            const response = await adminApi.getServiceDetail(id);
+            console.log('Service detail response:', response);
+            
+            // Xử lý dữ liệu linh hoạt: kiểm tra response.data hoặc chính response
+            const serviceData = response.data || response;
+            
+            if (serviceData && (serviceData.id || response.success)) {
+                setDetailModal({ 
+                    open: true, 
+                    service: response.data || response, 
+                    loading: false 
+                });
+            } else {
+                toast?.error?.('Dữ liệu dịch vụ không hợp lệ');
+                setDetailModal(prev => ({ ...prev, loading: false }));
+            }
+        } catch (error) {
+            console.error('Fetch service detail error:', error);
+            toast?.error?.('Không thể lấy chi tiết dịch vụ');
+            setDetailModal({ open: false, service: null, loading: false });
+        }
+    };
+
     const getTypeIcon = (type) => {
         switch (type) {
             case 'tour': return <Compass className="text-sky-500" size={16} />;
@@ -172,22 +209,22 @@ const ServiceManagement = () => {
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-col md:flex-row gap-4">
-                    <form onSubmit={handleSearch} className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
                         <input
                             type="text"
                             placeholder="Tìm tên dịch vụ, địa chỉ..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:shadow-md transition-all font-medium"
+                            className="w-full pl-14 pr-6 py-4 bg-white border border-slate-100 rounded-[22px] shadow-sm focus:ring-4 focus:ring-indigo-50 focus:border-indigo-200 outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300 placeholder:font-medium"
                         />
-                    </form>
-                    <div className="flex gap-2">
+                    </div>
+                    <div className="flex items-center gap-2">
                         <select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
-                            className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-slate-600 focus:outline-none cursor-pointer"
+                            className="h-14 px-4 bg-white border border-slate-100 rounded-[22px] text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 cursor-pointer shadow-sm transition-all"
                         >
                             <option value="">Tất cả loại</option>
                             <option value="tour">Tour</option>
@@ -198,7 +235,7 @@ const ServiceManagement = () => {
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold text-slate-600 focus:outline-none cursor-pointer"
+                            className="h-14 px-4 bg-white border border-slate-100 rounded-[22px] text-sm font-bold text-slate-600 focus:outline-none focus:ring-4 focus:ring-indigo-50 cursor-pointer shadow-sm transition-all"
                         >
                             <option value="">Tất cả trạng thái</option>
                             <option value="active">Hoạt động</option>
@@ -206,6 +243,10 @@ const ServiceManagement = () => {
                             <option value="draft">Bản nháp</option>
                             <option value="rejected">Từ chối</option>
                         </select>
+                        <button onClick={() => fetchPage(currentPage)}
+                            className="w-14 h-14 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-[22px] shadow-sm transition-all active:scale-95 cursor-pointer">
+                            <RotateCw size={20} />
+                        </button>
                     </div>
                 </div>
 
@@ -226,7 +267,12 @@ const ServiceManagement = () => {
                                 <tr key={svc.id} className="hover:bg-gray-50/50 transition-colors group relative">
                                     <td className="px-8 py-5">
                                         <div className="max-w-[300px]">
-                                            <p className="text-sm font-black text-slate-900 truncate leading-tight">{svc.name}</p>
+                                            <button 
+                                                onClick={() => handleViewDetail(svc.id)}
+                                                className="text-sm font-black text-slate-900 truncate leading-tight hover:text-indigo-600 transition-colors text-left block w-full"
+                                            >
+                                                {svc.name}
+                                            </button>
                                             <div className="flex items-center gap-1.5 mt-1 text-[11px] font-bold text-gray-400">
                                                 <MapPin size={10} />
                                                 {svc.location?.name || svc.address || 'Chưa có'}
@@ -332,7 +378,7 @@ const ServiceManagement = () => {
             {/* Status Update Modal */}
             {statusModal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setStatusModal({ open: false, service: null })} />
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
                     <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-[modalIn_0.3s_ease-out]">
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-6">
@@ -391,6 +437,231 @@ const ServiceManagement = () => {
                                     Cập nhật
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Detail Modal */}
+            {detailModal.open && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setDetailModal({ open: false, service: null, loading: false })} />
+                    <div className="relative w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh]">
+                        {/* Header */}
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${getStatusStyle(detailModal.service?.status)}`}>
+                                    {detailModal.service ? getTypeIcon(detailModal.service.type) : <Info size={24} />}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 leading-tight">
+                                        {detailModal.loading ? 'Đang tải...' : (detailModal.service?.name || 'Chi tiết dịch vụ')}
+                                    </h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {detailModal.service && (
+                                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border ${getStatusStyle(detailModal.service.status)}`}>
+                                                {getStatusLabel(detailModal.service.status)}
+                                            </span>
+                                        )}
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            {detailModal.service?.type || 'Dịch vụ'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setDetailModal({ open: false, service: null, loading: false })}
+                                className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/30">
+                            {detailModal.loading ? (
+                                <div className="h-full flex flex-col items-center justify-center py-20">
+                                    <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+                                    <p className="font-bold text-slate-400">Đang tải dữ liệu chi tiết...</p>
+                                </div>
+                            ) : detailModal.service ? (
+                                <div className="p-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        {/* Left Column */}
+                                        <div className="md:col-span-2 space-y-8">
+                                            {/* Main Media */}
+                                            <div className="aspect-video w-full rounded-3xl bg-slate-200 overflow-hidden shadow-inner">
+                                                {detailModal.service.media && detailModal.service.media.length > 0 ? (
+                                                    <img 
+                                                        src={detailModal.service.media[0].url} 
+                                                        alt="" 
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                                        <ImageIcon size={64} />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Gallery */}
+                                            {detailModal.service.media && detailModal.service.media.length > 1 && (
+                                                <div className="space-y-4">
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <ImageIcon size={18} className="text-pink-500" /> Bộ sưu tập ({detailModal.service.media.length})
+                                                    </h4>
+                                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                                                        {detailModal.service.media.map((m, i) => (
+                                                            <div key={i} className="aspect-square rounded-2xl bg-white border border-slate-200 overflow-hidden cursor-pointer hover:border-indigo-500 transition-all shadow-sm">
+                                                                <img src={m.url} alt="" className="w-full h-full object-cover" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Description */}
+                                            <div className="space-y-4">
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                    <FileText size={18} className="text-indigo-500" /> Mô tả chi tiết
+                                                </h4>
+                                                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">
+                                                    {detailModal.service.description || 'Không có mô tả chi tiết cho dịch vụ này.'}
+                                                </div>
+                                            </div>
+
+                                            {/* Schedules */}
+                                            {detailModal.service.type === 'tour' && detailModal.service.schedules?.length > 0 && (
+                                                <div className="space-y-4">
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <Map size={18} className="text-sky-500" /> Lịch trình chuyến đi
+                                                    </h4>
+                                                    <div className="space-y-4">
+                                                        {[...detailModal.service.schedules].sort((a,b) => a.day_number - b.day_number).map((day) => (
+                                                            <div key={day.id} className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm">
+                                                                <div className="flex items-center gap-4 mb-4">
+                                                                    <div className="w-10 h-10 bg-sky-500 text-white rounded-xl flex items-center justify-center text-sm font-black shadow-lg shadow-sky-200">
+                                                                        {day.day_number}
+                                                                    </div>
+                                                                    <p className="font-black text-slate-900">{day.title}</p>
+                                                                </div>
+                                                                <div className="ml-14 space-y-2">
+                                                                    {day.activities && Array.isArray(day.activities) && day.activities.map((act, i) => (
+                                                                        <div key={i} className="flex items-center gap-3 text-sm font-bold text-slate-500">
+                                                                            <div className="w-2 h-2 bg-sky-400 rounded-full shrink-0" />
+                                                                            {act}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Right Column */}
+                                        <div className="space-y-6">
+                                            <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl space-y-6">
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Giá cơ bản</p>
+                                                    <p className="text-3xl font-black text-white">{formatPrice(detailModal.service.base_price)}</p>
+                                                </div>
+                                                <div className="h-px bg-white/10" />
+                                                <div className="grid grid-cols-2 gap-6">
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời lượng</p>
+                                                        <p className="text-sm font-bold">{detailModal.service.duration_days}N {detailModal.service.duration_nights}Đ</p>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sức chứa</p>
+                                                        <p className="text-sm font-bold">{detailModal.service.max_guests || '--'} khách</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100">
+                                                <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Nhà cung cấp</h5>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 font-black shadow-sm text-lg">
+                                                        {detailModal.service.provider?.user?.display_name?.[0]}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-black text-slate-900 truncate">{detailModal.service.provider?.user?.display_name}</p>
+                                                        <p className="text-[10px] text-indigo-500 font-bold truncate">{detailModal.service.provider?.user?.email}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Địa điểm</h5>
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
+                                                        <MapPin size={20} />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-black text-slate-900">{detailModal.service.location?.name || 'Tỉnh/Thành'}</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold mt-1 leading-relaxed">
+                                                            {detailModal.service.address || 'Chưa có địa chỉ cụ thể'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {((detailModal.service.amenities?.length > 0) || (detailModal.service.includes?.length > 0)) && (
+                                                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                                                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Tiện ích & Bao gồm</h5>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {[...(detailModal.service.amenities || []), ...(detailModal.service.includes || [])].map((item, i) => (
+                                                            <span key={i} className="px-3 py-1.5 bg-slate-50 text-slate-600 text-[10px] font-bold rounded-xl border border-slate-100">
+                                                                {item}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-full flex items-center justify-center p-12 text-slate-400 font-bold">
+                                    Không có dữ liệu để hiển thị.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-white shrink-0">
+                            <button 
+                                onClick={() => setDetailModal({ open: false, service: null, loading: false })}
+                                className="px-8 py-3 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-2xl transition-all"
+                            >
+                                Đóng
+                            </button>
+                            {!detailModal.loading && detailModal.service?.status === 'pending_review' && (
+                                <>
+                                    <button 
+                                        onClick={() => {
+                                            setStatusModal({ open: true, service: detailModal.service });
+                                            setNewStatus('rejected');
+                                            setDetailModal({ open: false, service: null, loading: false });
+                                        }}
+                                        className="px-8 py-3 bg-rose-50 text-rose-600 text-sm font-black rounded-2xl hover:bg-rose-100 transition-all border border-rose-100"
+                                    >
+                                        Từ chối duyệt
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setStatusModal({ open: true, service: detailModal.service });
+                                            setNewStatus('active');
+                                            setDetailModal({ open: false, service: null, loading: false });
+                                        }}
+                                        className="px-10 py-3 bg-emerald-500 text-white text-sm font-black rounded-2xl shadow-xl shadow-emerald-500/20 hover:bg-emerald-600 transition-all active:scale-95"
+                                    >
+                                        Phê duyệt
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

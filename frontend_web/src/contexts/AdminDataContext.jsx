@@ -96,11 +96,11 @@ export const AdminDataProvider = ({ children }) => {
         finally { setOneLoading('categories', false); }
     }, [loadedStates.categories, meta.categories.current_page]);
 
-    const fetchUsers = useCallback(async (force = false, page = 1) => {
-        if (loadedStates.users && !force && page === meta.users.current_page) return;
+    const fetchUsers = useCallback(async (force = false, page = 1, params = {}) => {
+        if (loadedStates.users && !force && page === meta.users.current_page && Object.keys(params).length === 0) return;
         setOneLoading('users', true);
         try {
-            const res = await adminApi.getAllUsers({ page });
+            const res = await adminApi.getAllUsers({ page, ...params });
             if (res.success) { 
                 setUsers(res.data); 
                 if (res.meta) setMeta(prev => ({ ...prev, users: res.meta }));

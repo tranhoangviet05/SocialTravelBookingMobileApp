@@ -3,7 +3,7 @@ import { useProviderData } from '../../contexts/ProviderDataContext';
 import { 
     Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, 
     TrendingUp, Calendar, History, Loader2, DollarSign,
-    ArrowRightLeft, BadgeCheck
+    ArrowRightLeft, BadgeCheck, RotateCw
 } from 'lucide-react';
 const MyWallet = () => {
     const { 
@@ -55,9 +55,15 @@ const MyWallet = () => {
         <>
             <div className="space-y-6 max-w-6xl mx-auto">
                 {/* Header */}
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Ví tiền & Doanh thu</h2>
-                    <p className="text-gray-500 text-sm mt-1 font-medium">Theo dõi thu nhập và quản lý dòng tiền của bạn.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Ví tiền & Doanh thu</h2>
+                        <p className="text-gray-500 text-sm mt-1 font-medium">Theo dõi thu nhập và quản lý dòng tiền của bạn.</p>
+                    </div>
+                    <button onClick={() => { fetchWallet(); fetchWalletReport(); }}
+                        className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 text-slate-400 hover:text-indigo-600 hover:border-indigo-100 rounded-2xl shadow-sm transition-all active:scale-95 cursor-pointer">
+                        <RotateCw size={20} />
+                    </button>
                 </div>
 
                 {/* Main Stats Cards */}
