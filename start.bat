@@ -7,7 +7,8 @@ echo.
 
 :: ── BACKEND API ───────────────────────────────
 echo [1/5] Khoi dong Backend API (http://localhost:8000)...
-start "Backend API" cmd /k "cd /d %~dp0backend && php -S 127.0.0.1:8000 -t public"
+start "Backend API" cmd /k "cd /d %~dp0backend && php -S 0.0.0.0:8000 -t public
+"
 
 :: Doi 2 giay de backend khoi dong truoc
 timeout /t 2 /nobreak > nul

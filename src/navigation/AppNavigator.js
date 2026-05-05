@@ -1,14 +1,31 @@
 import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import SyncLoadingScreen from '../screens/SyncLoadingScreen';
+import { BookingScreen, ExploreScreen, ProfileScreen } from '../screens/PlaceholderScreens';
+import FloatingTabBar from '../components/navigation/FloatingTabBar';
 
+const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-/**
- * AppNavigator: Quản lý luồng đã đăng nhập
- * Màn hình đầu tiên luôn là SyncLoading để đảm bảo dữ liệu đã khớp với Postgres
- */
+const MainTabNavigator = () => {
+  return (
+    <Tab.Navigator
+      // Dùng custom tab bar để kiểm soát hoàn toàn giao diện
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen name="Tìm kiếm" component={HomeScreen} />
+      <Tab.Screen name="Đặt chỗ" component={BookingScreen} />
+      <Tab.Screen name="Khám phá" component={ExploreScreen} />
+      <Tab.Screen name="Tài khoản" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+};
+
 const AppNavigator = () => {
   return (
     <Stack.Navigator
@@ -16,7 +33,7 @@ const AppNavigator = () => {
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="SyncLoading" component={SyncLoadingScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Main" component={MainTabNavigator} />
     </Stack.Navigator>
   );
 };

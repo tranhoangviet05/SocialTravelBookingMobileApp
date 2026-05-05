@@ -6,10 +6,11 @@ import { auth } from '../config/firebase';
  * - Đảm bảo điện thoại và máy tính dùng chung một mạng WiFi.
  * - Đổi IP_LAN bên dưới thành địa chỉ IPv4 của máy tính bạn.
  */
-const IP_LAN = '192.168.1.14';
+export const IP_LAN = '192.168.88.117';
+export const BASE_URL = `http://${IP_LAN}:8000`;
 
 const apiClient = axios.create({
-  baseURL: `http://${IP_LAN}:8000/api`,
+  baseURL: `${BASE_URL}/api`,
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',

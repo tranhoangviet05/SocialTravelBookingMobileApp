@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 import SplashScreen from '../screens/SplashScreen';
 import { Colors } from '../constants/Colors';
+import { useAuth } from '../hooks/useAuth';
 
 /**
  * RootNavigator: Điều phối toàn bộ ứng dụng
@@ -17,23 +16,14 @@ import { Colors } from '../constants/Colors';
  *      Chưa đăng nhập → AuthNavigator (Login, Register)
  */
 const RootNavigator = () => {
-  const [isLoading, setIsLoading] = useState(true);   // Đang hiện Splash
-  const [user, setUser] = useState(null);              // Firebase user
-
-  useEffect(() => {
-    // Lắng nghe trạng thái đăng nhập từ Firebase
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-
-    return unsubscribe; // Hủy lắng nghe khi component unmount
-  }, []);
+  const { user, loading: authLoading } = useAuth();
+  const [isSplashLoading, setIsSplashLoading] = useState(true);   // Đang hiện Splash
 
   const handleSplashFinish = () => {
-    setIsLoading(false);
+    setIsSplashLoading(false);
   };
 
-  if (isLoading) {
+  if (isSplashLoading || authLoading) {
     return (
       <View style={styles.container}>
         <SplashScreen onFinish={handleSplashFinish} />

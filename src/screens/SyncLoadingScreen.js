@@ -23,13 +23,12 @@ const SyncLoadingScreen = ({ navigation }) => {
         await authApi.syncUser();
         console.log('SyncLoading: Đồng bộ thành công!');
         
-        // Chuyển sang Home và xóa lịch sử navigation (không cho quay lại màn loading)
-        navigation.replace('Home');
+        // Chuyển sang Main (Bottom Tabs) và xóa lịch sử navigation
+        navigation.replace('Main');
       } catch (error) {
         console.error('SyncLoading: Lỗi đồng bộ', error);
-        // Nếu lỗi quá nặng, có thể cho logout hoặc thử lại
-        // Ở đây chúng ta tạm thời vẫn cho vào Home hoặc báo lỗi
-        navigation.replace('Home'); 
+        // Nếu lỗi vẫn cho vào Main để demo giao diện
+        navigation.replace('Main'); 
       }
     };
 

@@ -1,25 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
+import {
   StyleSheet, Text, View,
-  ActivityIndicator, Animated, TouchableOpacity, 
+  ActivityIndicator, Animated, TouchableOpacity,
   Image, ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebase';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import CustomButton from '../components/common/CustomButton';
 import CustomInput from '../components/common/CustomInput';
 import Toast from '../components/common/Toast';
-import { loginUser } from '../utils/authService';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
+  const { login, loginWithGoogle, isAuthenticating } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const toastRef = useRef(null);
 
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -41,26 +39,21 @@ const LoginScreen = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (email === '' || password === '') {
-      toastRef.current?.show('Vui lòng nhập đầy đủ thông tin', 'error');
-      return;
-    }
+    const result = await login(email, password);
 
-    setLoading(true);
-    try {
-      await loginUser(email, password);
-      // Firebase auth thành công → RootNavigator tự động chuyển sang AppNavigator
+    if (result.success) {
       toastRef.current?.show('Đăng nhập thành công!', 'success');
-    } catch (error) {
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-        toastRef.current?.show('Sai email hoặc mật khẩu!', 'error');
-      } else if (error.code === 'auth/user-not-found') {
-        toastRef.current?.show('Tài khoản không tồn tại', 'error');
-      } else {
-        toastRef.current?.show('Đã có lỗi xảy ra, vui lòng thử lại', 'error');
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      toastRef.current?.show(result.message, 'error');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const result = await loginWithGoogle();
+    if (result.success) {
+      toastRef.current?.show('Đăng nhập Google thành công!', 'success');
+    } else {
+      toastRef.current?.show(result.message, 'error');
     }
   };
 
@@ -92,7 +85,7 @@ const LoginScreen = () => {
               Hãy nhập thông tin của bạn để khám phá thêm nhiều điều mới cùng chúng tôi
             </Text>
           </View>
-          
+
           <View style={styles.form}>
             <CustomInput
               label="Địa chỉ Email"
@@ -101,7 +94,7 @@ const LoginScreen = () => {
               onChangeText={setEmail}
               keyboardType="email-address"
             />
-            
+
             <CustomInput
               label="Mật khẩu"
               placeholder="••••••••"
@@ -113,9 +106,9 @@ const LoginScreen = () => {
             <TouchableOpacity style={styles.forgotPassword}>
               <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
             </TouchableOpacity>
-            
-            <CustomButton 
-              title={loading ? <ActivityIndicator color={Colors.white} /> : "Đăng nhập"} 
+
+            <CustomButton
+              title={isAuthenticating ? <ActivityIndicator color={Colors.white} /> : "Đăng nhập"}
               onPress={handleLogin}
               style={styles.loginButton}
             />
@@ -126,13 +119,13 @@ const LoginScreen = () => {
               <View style={styles.line} />
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.googleButton}
               onPress={() => toastRef.current?.show('Tính năng đang phát triển', 'error')}
             >
-              <Image 
-                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }} 
-                style={styles.googleIcon} 
+              <Image
+                source={{ uri: 'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png' }}
+                style={styles.googleIcon}
               />
               <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
             </TouchableOpacity>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
+import {
   StyleSheet, Text, View,
-  ActivityIndicator, Animated, TouchableOpacity, 
+  ActivityIndicator, Animated, TouchableOpacity,
   ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,16 +10,16 @@ import { Typography } from '../constants/Typography';
 import CustomButton from '../components/common/CustomButton';
 import CustomInput from '../components/common/CustomInput';
 import Toast from '../components/common/Toast';
-import { registerUser } from '../utils/authService';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../hooks/useAuth';
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
+  const { register, isAuthenticating } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const toastRef = useRef(null);
 
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -40,46 +40,13 @@ const RegisterScreen = () => {
     ]).start();
   }, []);
 
-  const validate = () => {
-    if (!name.trim()) {
-      toastRef.current?.show('Vui lòng nhập họ tên của bạn', 'error');
-      return false;
-    }
-    if (!email.trim()) {
-      toastRef.current?.show('Vui lòng nhập địa chỉ email', 'error');
-      return false;
-    }
-    if (password.length < 6) {
-      toastRef.current?.show('Mật khẩu phải có ít nhất 6 ký tự', 'error');
-      return false;
-    }
-    if (password !== confirmPassword) {
-      toastRef.current?.show('Mật khẩu xác nhận không khớp', 'error');
-      return false;
-    }
-    return true;
-  };
-
   const handleRegister = async () => {
-    if (!validate()) return;
+    const result = await register(name, email, password, confirmPassword);
 
-    setLoading(true);
-    try {
-      await registerUser(name, email, password);
+    if (result.success) {
       toastRef.current?.show('Tạo tài khoản thành công!', 'success');
-      // Firebase tự cập nhật trạng thái → RootNavigator tự động chuyển sang AppNavigator
-    } catch (error) {
-      let message = 'Đã có lỗi xảy ra, vui lòng thử lại';
-      if (error.code === 'auth/email-already-in-use') {
-        message = 'Email này đã được sử dụng';
-      } else if (error.code === 'auth/invalid-email') {
-        message = 'Địa chỉ email không hợp lệ';
-      } else if (error.code === 'auth/weak-password') {
-        message = 'Mật khẩu quá yếu, hãy chọn mật khẩu mạnh hơn';
-      }
-      toastRef.current?.show(message, 'error');
-    } finally {
-      setLoading(false);
+    } else {
+      toastRef.current?.show(result.message, 'error');
     }
   };
 
@@ -102,10 +69,10 @@ const RegisterScreen = () => {
             <Text style={styles.welcomeText}>Tạo tài khoản mới</Text>
             <Text style={styles.logoText}>Social Travel Booking</Text>
             <Text style={styles.subtitle}>
-              Tham gia cùng chúng tôi và bắt đầu hành trình khám phá của bạn
+              Bắt đầu hành trình khám phá của bạn
             </Text>
           </View>
-          
+
           {/* Form */}
           <View style={styles.form}>
             <CustomInput
@@ -114,7 +81,7 @@ const RegisterScreen = () => {
               value={name}
               onChangeText={setName}
             />
-            
+
             <CustomInput
               label="Địa chỉ Email"
               placeholder="example@gmail.com"
@@ -122,7 +89,7 @@ const RegisterScreen = () => {
               onChangeText={setEmail}
               keyboardType="email-address"
             />
-            
+
             <CustomInput
               label="Mật khẩu"
               placeholder="Ít nhất 6 ký tự"
@@ -138,9 +105,9 @@ const RegisterScreen = () => {
               onChangeText={setConfirmPassword}
               secureTextEntry
             />
-            
-            <CustomButton 
-              title={loading ? <ActivityIndicator color={Colors.white} /> : "Đăng ký"} 
+
+            <CustomButton
+              title={isAuthenticating ? <ActivityIndicator color={Colors.white} /> : "Đăng ký"}
               onPress={handleRegister}
               style={styles.registerButton}
             />
