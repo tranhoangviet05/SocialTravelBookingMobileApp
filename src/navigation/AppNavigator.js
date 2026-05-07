@@ -28,6 +28,8 @@ const MainTabNavigator = () => {
   );
 };
 
+import WishlistScreen from '../screens/WishlistScreen';
+
 const AppNavigator = () => {
   return (
     <Stack.Navigator
@@ -38,6 +40,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Main" component={MainTabNavigator} />
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
+      <Stack.Screen name="Wishlist" component={WishlistScreen} />
     </Stack.Navigator>
   );
 };
