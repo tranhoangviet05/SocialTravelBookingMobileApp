@@ -2,14 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView,
   TouchableOpacity, Image, Dimensions,
-  TextInput, ImageBackground, ActivityIndicator
+  TextInput, ImageBackground, ActivityIndicator, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  Search, MapPin, Users, Calendar as CalendarIcon, 
-  ChevronRight, Star, ShieldCheck, Headphones, 
-  Zap, Gift, Sparkles, Lightbulb, Navigation 
+import {
+  Search, MapPin, Users, Calendar as CalendarIcon,
+  ChevronRight, Star, ShieldCheck, Headphones,
+  Zap, Gift, Sparkles, Lightbulb, Navigation
 } from 'lucide-react-native';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
@@ -17,16 +17,17 @@ import HomeHeader from '../components/home/HomeHeader';
 import CustomDatePicker from '../components/home/CustomDatePicker';
 import GuestPicker from '../components/home/GuestPicker';
 import apiClient, { BASE_URL } from '../api/apiClient';
+import Skeleton from '../components/common/Skeleton';
 
 const HEADER_DARK = '#0077B6';
 const { width } = Dimensions.get('window');
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const [activeCategory, setActiveCategory] = useState('stay');
+  const [location, setLocation] = useState('');
   const [selectedRange, setSelectedRange] = useState({ startDate: null, endDate: null });
   const [guests, setGuests] = useState({ rooms: 1, adults: 2, children: 0 });
-  
-  // State for dynamic data
+
   const [trendingDestinations, setTrendingDestinations] = useState([]);
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +42,6 @@ const HomeScreen = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Gọi song song các API
       const [locationsRes, couponsRes] = await Promise.all([
         apiClient.get('/general/get/locations?is_popular=true'),
         apiClient.get('/general/get/coupons')
@@ -60,6 +60,37 @@ const HomeScreen = () => {
     }
   };
 
+  const handleSearch = () => {
+    if (!location.trim()) {
+      Alert.alert('Thông báo', 'Vui lòng nhập điểm đến của bạn.');
+      return;
+    }
+    if (!selectedRange.startDate || (activeCategory !== 'activity' && !selectedRange.endDate)) {
+      Alert.alert('Thông báo', activeCategory === 'activity' ? 'Vui lòng chọn ngày đi.' : 'Vui lòng chọn ngày đi và ngày về.');
+      return;
+    }
+
+    const getServiceTypes = () => {
+      switch (activeCategory) {
+        case 'stay': return 'hotel,homestay';
+        case 'activity': return 'tour';
+        case 'car': return 'vehicle';
+        default: return '';
+      }
+    };
+
+    navigation.navigate('Search', {
+      searchParams: {
+        location,
+        startDate: selectedRange.startDate.toISOString(),
+        endDate: selectedRange.endDate?.toISOString() || selectedRange.startDate.toISOString(),
+        guests,
+        type: getServiceTypes(),
+        category: activeCategory // Giữ lại để hiển thị UI nếu cần
+      }
+    });
+  };
+
   const formatDate = (date) => {
     if (!date) return '';
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
@@ -72,7 +103,6 @@ const HomeScreen = () => {
     { id: 4, title: 'Giá tốt nhất', desc: 'Cam kết mức giá cạnh tranh nhất.', Icon: Zap, color: '#FF5722' },
   ];
 
-  // Helper function to get random gradient for offers
   const getOfferGradient = (index) => {
     const gradients = [
       ['#FF9A8B', '#FF6A88'],
@@ -96,8 +126,17 @@ const HomeScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
-        style={{ backgroundColor: '#fff' }}
+        style={{ backgroundColor: '#fff' }} // Trả về màu trắng cho nền chung
       >
+        <View style={{
+          backgroundColor: HEADER_DARK,
+          height: 1000,
+          position: 'absolute',
+          top: -1000,
+          left: 0,
+          right: 0
+        }} />
+
         {/* Search Section */}
         <LinearGradient
           colors={[HEADER_DARK, Colors.primary, '#80D4F7', '#fff']}
@@ -105,15 +144,19 @@ const HomeScreen = () => {
           style={styles.searchGradient}
         >
           <View style={styles.searchCard}>
+            {/* Địa điểm - Luôn hiển thị */}
             <TouchableOpacity style={styles.searchInputRow}>
               <MapPin color={Colors.primary} size={20} />
               <TextInput
                 style={styles.textInput}
-                placeholder="Nhập điểm đến"
+                value={location}
+                onChangeText={setLocation}
+                placeholder={activeCategory === 'car' ? "Địa điểm nhận xe" : "Nhập điểm đến"}
                 placeholderTextColor={Colors.textSecondary}
               />
             </TouchableOpacity>
 
+            {/* Ngày tháng - Tùy biến theo Tab */}
             <TouchableOpacity
               style={styles.searchInputRow}
               onPress={() => datePickerRef.current?.open()}
@@ -121,28 +164,36 @@ const HomeScreen = () => {
               <CalendarIcon color={Colors.primary} size={20} />
               <Text style={[styles.textInput, !selectedRange.startDate && { color: Colors.textSecondary }]}>
                 {selectedRange.startDate
-                  ? `${formatDate(selectedRange.startDate)} - ${formatDate(selectedRange.endDate)}`
-                  : 'Nhập ngày đi - về'}
+                  ? (activeCategory === 'activity' 
+                      ? formatDate(selectedRange.startDate) 
+                      : `${formatDate(selectedRange.startDate)} - ${formatDate(selectedRange.endDate)}`)
+                  : (activeCategory === 'activity' ? 'Chọn ngày đi' : 'Nhập ngày đi - về')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.searchInputRow}
-              onPress={() => guestPickerRef.current?.open()}
+            {/* Số khách - Chỉ hiện ở tab Lưu trú */}
+            {activeCategory === 'stay' && (
+              <TouchableOpacity
+                style={styles.searchInputRow}
+                onPress={() => guestPickerRef.current?.open()}
+              >
+                <Users color={Colors.primary} size={20} />
+                <Text style={styles.textInput}>
+                  {guests.rooms} phòng, {guests.adults} người lớn, {guests.children} trẻ em
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity 
+              style={styles.searchButton}
+              onPress={handleSearch}
             >
-              <Users color={Colors.primary} size={20} />
-              <Text style={styles.textInput}>
-                {guests.rooms} phòng, {guests.adults} người lớn, {guests.children} trẻ em
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.searchButton}>
               <Text style={styles.searchButtonText}>Tìm kiếm</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>
 
-        {/* 1. Trending Destinations (Large Carousel) */}
+        {/* 1. Trending Destinations */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Điểm đến đang thịnh hành</Text>
         </View>
@@ -153,7 +204,13 @@ const HomeScreen = () => {
           contentContainerStyle={styles.featuredScroll}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.primary} style={{ margin: 50 }} />
+            <View style={{ flexDirection: 'row', paddingLeft: 0 }}>
+              {[1, 2].map(i => (
+                <View key={i} style={{ marginRight: 15 }}>
+                  <Skeleton width={width - 40} height={250} borderRadius={20} />
+                </View>
+              ))}
+            </View>
           ) : (
             trendingDestinations.map(dest => (
               <TouchableOpacity key={dest.id} style={styles.featuredCard}>
@@ -189,7 +246,13 @@ const HomeScreen = () => {
           contentContainerStyle={styles.horizontalScroll}
         >
           {loading ? (
-            <ActivityIndicator color={Colors.primary} style={{ marginLeft: 20 }} />
+            <View style={{ flexDirection: 'row', paddingLeft: 0 }}>
+              {[1, 2, 3].map(i => (
+                <View key={i} style={{ marginRight: 15 }}>
+                  <Skeleton width={width * 0.6} height={150} borderRadius={20} />
+                </View>
+              ))}
+            </View>
           ) : (
             offers.map((item, index) => (
               <LinearGradient
@@ -259,7 +322,7 @@ const HomeScreen = () => {
           </View>
         </LinearGradient>
 
-        {/* 5. Suggestion Management (Restored) */}
+        {/* 5. Suggestion Management */}
         <View style={styles.noticeCard}>
           <View style={styles.noticeIconBox}>
             <Sparkles color={Colors.primary} size={24} />
@@ -294,7 +357,7 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#0077B6' },
+  safeArea: { flex: 1, backgroundColor: '#fff' }, // Nền an toàn là màu trắng
   searchGradient: {
     paddingHorizontal: Typography.spacing.md,
     paddingTop: 20,
@@ -359,8 +422,6 @@ const styles = StyleSheet.create({
   horizontalScroll: {
     paddingLeft: Typography.spacing.md,
   },
-  
-  // Trending Section
   featuredScroll: {
     paddingLeft: Typography.spacing.md,
     paddingRight: Typography.spacing.md - 15,
@@ -382,8 +443,6 @@ const styles = StyleSheet.create({
   featuredLocation: { color: '#fff', fontSize: 24, fontWeight: 'bold', letterSpacing: 1 },
   featuredTag: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
   featuredTagText: { color: '#fff', fontSize: 14, marginLeft: 4, opacity: 0.9 },
-
-  // Offers Section
   offerCard: {
     width: width * 0.6,
     height: 150,
@@ -402,8 +461,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   promoText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-
-  // Why Choose Us
   whyCard: {
     width: width * 0.45,
     backgroundColor: '#fff',
@@ -423,8 +480,6 @@ const styles = StyleSheet.create({
   },
   whyTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 5 },
   whyDesc: { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
-  
-  // AI Section
   aiCard: {
     margin: Typography.spacing.md,
     borderRadius: 20,
@@ -448,8 +503,6 @@ const styles = StyleSheet.create({
   },
   aiButtonText: { color: '#4F46E5', fontWeight: 'bold', marginLeft: 8, fontSize: 14 },
   aiIconFloating: { position: 'absolute', right: -20, bottom: -20 },
-
-  // Notice Section
   noticeCard: {
     margin: Typography.spacing.md,
     padding: 20,

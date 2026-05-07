@@ -20,10 +20,12 @@ class ServiceSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'keyword'   => 'nullable|string|max:100',
-            'location_id' => 'nullable|uuid|exists:locations,id',
+            'keyword'   => 'nullable|string|max:255',
+            'location_id' => 'nullable|integer|exists:locations,id',
+            'type'      => 'nullable|string', // hotel, homestay, tour, vehicle (có thể là chuỗi csv)
+            'sort'      => 'nullable|string|in:newest,price_asc,price_desc,rating',
             'price_min' => 'nullable|numeric|min:0',
-            'price_max' => 'nullable|numeric|gt:price_min',
+            'price_max' => 'nullable|numeric|min:0', // Bỏ gt:price_min vì price_min có thể null
             'limit'     => 'nullable|integer|min:1|max:50',
         ];
     }

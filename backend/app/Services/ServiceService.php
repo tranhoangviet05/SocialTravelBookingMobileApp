@@ -15,22 +15,41 @@ class ServiceService
     {
         $query = Service::query()->where('status', 'active');
 
-        // Tìm kiếm theo từ khóa (tên hoặc mô tả)
-        if (!empty($filters['keyword'])) {
-            $query->where(function (Builder $q) use ($filters) {
-                $q->where('name', 'ILIKE', '%' . $filters['keyword'] . '%')
-                  ->orWhere('description', 'ILIKE', '%' . $filters['keyword'] . '%');
+        // 1. Lọc theo location_id (chính xác, ưu tiên cao nhất)
+        if (!empty($filters['location_id'])) {
+            $query->where('location_id', $filters['location_id']);
+        } elseif (!empty($filters['keyword'])) {
+            // 2. Nếu không có location_id, tìm location theo tên keyword
+            //    rồi lọc service theo location_id tìm được
+            $keyword = $filters['keyword'];
+
+            // Tìm các location_id khớp tên
+            $locationIds = \App\Models\Location::where('name', 'ILIKE', '%' . $keyword . '%')
+                ->pluck('id')
+                ->toArray();
+
+            $query->where(function (Builder $q) use ($keyword, $locationIds) {
+                // Tìm theo tên/mô tả/địa chỉ của service
+                $q->where('name', 'ILIKE', '%' . $keyword . '%')
+                  ->orWhere('description', 'ILIKE', '%' . $keyword . '%')
+                  ->orWhere('address', 'ILIKE', '%' . $keyword . '%');
+
+                // HOẶC tìm theo location_id
+                if (!empty($locationIds)) {
+                    $q->orWhereIn('location_id', $locationIds);
+                }
             });
         }
 
-        // Lọc theo địa điểm
-        if (!empty($filters['location_id'])) {
-            $query->where('location_id', $filters['location_id']);
-        }
-
-        // Lọc theo danh mục
+        // Lọc theo danh mục ID
         if (!empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
+        }
+
+        // Lọc theo loại hình dịch vụ (type) - Ví dụ: hotel,homestay,tour,vehicle
+        if (!empty($filters['type'])) {
+            $types = explode(',', $filters['type']);
+            $query->whereIn('type', $types);
         }
 
         // Lọc theo giá
@@ -41,7 +60,7 @@ class ServiceService
             $query->where('base_price', '<=', $filters['price_max']);
         }
 
-        // Mặc định lấy kèm ảnh đại diện (cover) và địa điểm
+        // Lấy kèm ảnh đại diện (cover) và địa điểm
         return $query->with(['media' => function($q) {
             $q->where('is_cover', true);
         }, 'location'])

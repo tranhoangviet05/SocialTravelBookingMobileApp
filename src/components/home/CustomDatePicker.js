@@ -7,6 +7,8 @@ import { Colors } from '../../constants/Colors';
 const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const [currentMonth] = useState(new Date());
 
   const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
@@ -31,7 +33,7 @@ const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
   }, [currentMonth]);
 
   const handleDatePress = (date) => {
-    if (!date) return;
+    if (!date || date < today) return;
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
       setEndDate(null);
@@ -43,8 +45,9 @@ const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
   };
 
   const handleConfirm = () => {
-    if (startDate && endDate) {
-      onSelectRange({ startDate, endDate });
+    if (startDate) {
+      // Nếu không có endDate, coi như endDate = startDate (cho tab Hoạt động)
+      onSelectRange({ startDate, endDate: endDate || startDate });
       bottomSheetRef.current?.close();
     }
   };
@@ -75,8 +78,8 @@ const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
           <X color={Colors.text} size={22} />
         </TouchableOpacity>
         <Text style={styles.sheetTitle}>Chọn ngày</Text>
-        <TouchableOpacity disabled={!startDate || !endDate} onPress={handleConfirm}>
-          <Text style={[styles.confirmText, (!startDate || !endDate) && styles.disabledText]}>Xong</Text>
+        <TouchableOpacity disabled={!startDate} onPress={handleConfirm}>
+          <Text style={[styles.confirmText, !startDate && styles.disabledText]}>Xong</Text>
         </TouchableOpacity>
       </View>
 
@@ -104,6 +107,7 @@ const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
               {month.days.map((day, dIdx) => {
                 const selected = isSelected(day);
                 const inRange = isInRange(day);
+                const isPast = day && day < today;
                 return (
                   <TouchableOpacity
                     key={dIdx}
@@ -115,9 +119,14 @@ const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
                       day && endDate?.getTime() === day.getTime() && styles.endRangeDay,
                     ]}
                     onPress={() => handleDatePress(day)}
-                    disabled={!day}
+                    disabled={!day || isPast}
                   >
-                    <Text style={[styles.dayText, selected && styles.selectedDayText, inRange && styles.rangeDayText]}>
+                    <Text style={[
+                      styles.dayText, 
+                      selected && styles.selectedDayText, 
+                      inRange && styles.rangeDayText,
+                      isPast && styles.pastDayText
+                    ]}>
                       {day ? day.getDate() : ''}
                     </Text>
                   </TouchableOpacity>
@@ -167,6 +176,7 @@ const styles = StyleSheet.create({
   rangeDayText: { color: Colors.primary },
   startRangeDay: { borderTopLeftRadius: 22, borderBottomLeftRadius: 22 },
   endRangeDay: { borderTopRightRadius: 22, borderBottomRightRadius: 22 },
+  pastDayText: { color: '#E0E0E0' },
 });
 
 export default CustomDatePicker;

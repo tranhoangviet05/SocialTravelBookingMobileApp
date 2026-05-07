@@ -23,7 +23,6 @@ class ServiceController extends Controller
      */
     public function index(ServiceSearchRequest $request)
     {
-        // Dữ liệu đã được validate tự động bởi ServiceSearchRequest
         $filters = $request->validated();
         $services = $this->serviceService->search($filters);
 

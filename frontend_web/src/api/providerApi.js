@@ -28,6 +28,10 @@ const providerApi = {
     createRoomType: (serviceId, data) => axios.post(`/provider/services/${serviceId}/room-types`, data),
     updateRoomType: (serviceId, roomTypeId, data) => axios.put(`/provider/services/${serviceId}/room-types/${roomTypeId}`, data),
     deleteRoomType: (serviceId, roomTypeId) => axios.delete(`/provider/services/${serviceId}/room-types/${roomTypeId}`),
+    
+    // Trạng thái khả dụng
+    getAvailability: (serviceId, params) => axios.get(`/provider/services/${serviceId}/availability`, { params }),
+    updateAvailabilityBatch: (serviceId, data) => axios.post(`/provider/services/${serviceId}/availability/batch`, data),
 
     // Đặt chỗ
     getBookings: (status = 'all') => axios.get('/provider/bookings', { params: { status } }),

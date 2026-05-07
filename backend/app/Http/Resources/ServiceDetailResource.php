@@ -22,6 +22,8 @@ class ServiceDetailResource extends JsonResource
             'duration_days' => (int) $this->duration_days,
             'duration_nights' => (int) $this->duration_nights,
             'address' => $this->address,
+            'latitude' => (float) $this->latitude,
+            'longitude' => (float) $this->longitude,
             'rating_avg' => (float) ($this->rating_avg ?? 0),
             'total_reviews' => (int) ($this->total_reviews ?? $this->reviews()->count()),
             'total_bookings' => (int) ($this->total_bookings ?? $this->bookings()->count()),

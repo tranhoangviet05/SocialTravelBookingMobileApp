@@ -10,6 +10,7 @@ import {
 import providerApi from '../../api/providerApi';
 import { uploadImage } from '../../utils/cloudinary';
 
+
 const Toast = ({ message, type = 'success', onClose }) => {
     useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
     return (
@@ -94,15 +95,15 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
         setForm({ ...emptyForm, day_number: (schedules.length + 1).toString() });
         setShowForm(true);
     };
-    const openEdit = (s) => { 
-        setEditItem(s); 
-        setForm({ 
-            day_number: s.day_number, 
-            title: s.title, 
+    const openEdit = (s) => {
+        setEditItem(s);
+        setForm({
+            day_number: s.day_number,
+            title: s.title,
             description: s.description || '',
             activities: Array.isArray(s.activities) ? s.activities : []
-        }); 
-        setShowForm(true); 
+        });
+        setShowForm(true);
     };
 
     const handleSave = async (e) => {
@@ -164,11 +165,10 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                         <div className="flex items-center gap-2 mt-1">
                             <p className="text-sm text-slate-400 font-medium">{service.name}</p>
                             {maxDays !== Infinity && (
-                                <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${
-                                    schedules.length >= maxDays
-                                        ? 'bg-rose-50 text-rose-500'
-                                        : 'bg-sky-50 text-sky-600'
-                                }`}>
+                                <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${schedules.length >= maxDays
+                                    ? 'bg-rose-50 text-rose-500'
+                                    : 'bg-sky-50 text-sky-600'
+                                    }`}>
                                     {schedules.length}/{maxDays} ngày
                                 </span>
                             )}
@@ -179,11 +179,10 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                             onClick={openCreate}
                             disabled={!canAddMore}
                             title={!canAddMore ? `Đã đủ ${maxDays} ngày lịch trình` : 'Thêm ngày'}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                                canAddMore
-                                    ? 'bg-sky-600 text-white hover:bg-sky-700'
-                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            }`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${canAddMore
+                                ? 'bg-sky-600 text-white hover:bg-sky-700'
+                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
                         >
                             <Plus size={16} /> Thêm ngày
                         </button>
@@ -196,11 +195,11 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                     <form onSubmit={handleSave} className="px-8 py-5 bg-sky-50 border-b border-sky-100 overflow-y-auto max-h-[400px] custom-scrollbar">
                         <h4 className="text-sm font-black text-sky-700 mb-4">{editItem ? `Sửa Ngày ${editItem.day_number}` : 'Thêm ngày mới'}</h4>
                         <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ngày số *</label>
-                                <input required type="number" min="1" value={form.day_number}
-                                    onChange={e => setForm({ ...form, day_number: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
-                            </div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ngày số *</label>
+                            <input required type="number" min="1" value={form.day_number}
+                                onChange={e => setForm({ ...form, day_number: e.target.value })}
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20" />
+                        </div>
                         <div className="mt-3">
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tiêu đề ngày *</label>
                             <input required value={form.title}
@@ -225,7 +224,7 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                                         <div className="flex-1 px-4 py-2 bg-white border border-sky-100 rounded-xl text-sm font-bold text-slate-700 shadow-sm">
                                             {act}
                                         </div>
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => setForm({ ...form, activities: form.activities.filter((_, i) => i !== idx) })}
                                             className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
@@ -236,7 +235,7 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                                 ))}
                             </div>
                             <div className="flex gap-2">
-                                <input 
+                                <input
                                     value={activityInput}
                                     onChange={e => setActivityInput(e.target.value)}
                                     onKeyDown={e => {
@@ -249,9 +248,9 @@ const ScheduleModal = ({ service, onClose, showToast }) => {
                                         }
                                     }}
                                     className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                                    placeholder="Thêm điểm dừng..." 
+                                    placeholder="Thêm điểm dừng..."
                                 />
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => {
                                         if (activityInput.trim()) {
@@ -331,8 +330,9 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
 
     const emptyForm = {
         name: '', rank: 'standard', base_price: '', total_rooms: '1',
+        inventory: '1',
         capacity_adults: '2', capacity_children: '0',
-        description: '', amenities: ''
+        description: '', amenities: '', images: []
     };
     const [form, setForm] = useState(emptyForm);
 
@@ -356,10 +356,12 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
             rank: rt.rank || 'standard',
             base_price: rt.base_price,
             total_rooms: rt.total_rooms.toString(),
+            inventory: (rt.inventory || 1).toString(),
             capacity_adults: rt.capacity_adults.toString(),
             capacity_children: rt.capacity_children.toString(),
             description: rt.description || '',
-            amenities: (rt.amenities || []).join('\n')
+            amenities: (rt.amenities || []).join('\n'),
+            images: rt.images || []
         });
         setShowForm(true);
     };
@@ -372,9 +374,11 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
                 ...form,
                 base_price: Number(form.base_price),
                 total_rooms: Number(form.total_rooms),
+                inventory: Number(form.inventory),
                 capacity_adults: Number(form.capacity_adults),
                 capacity_children: Number(form.capacity_children),
-                amenities: form.amenities.split('\n').map(s => s.trim()).filter(Boolean)
+                amenities: form.amenities.split('\n').map(s => s.trim()).filter(Boolean),
+                images: form.images
             };
 
             if (editItem) {
@@ -447,15 +451,69 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Số phòng ngủ *</label>
+                                    <input required type="number" value={form.total_rooms} onChange={e => setForm({ ...form, total_rooms: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Số lượng phòng (Kho) *</label>
+                                    <input required type="number" value={form.inventory} onChange={e => setForm({ ...form, inventory: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Sức chứa (Lớn) *</label>
                                     <input required type="number" value={form.capacity_adults} onChange={e => setForm({ ...form, capacity_adults: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Số phòng *</label>
-                                    <input required type="number" value={form.total_rooms} onChange={e => setForm({ ...form, total_rooms: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Trẻ em</label>
+                                    <input type="number" value={form.capacity_children} onChange={e => setForm({ ...form, capacity_children: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-slate-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Ảnh chi tiết phòng</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        id="room-images"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                            const files = Array.from(e.target.files);
+                                            setSaving(true);
+                                            try {
+                                                const urls = await Promise.all(files.map(uploadImage));
+                                                setForm(f => ({ ...f, images: [...f.images, ...urls] }));
+                                            } catch { showToast('Lỗi tải ảnh', 'error'); }
+                                            finally { setSaving(false); }
+                                        }}
+                                    />
+                                    <label htmlFor="room-images" className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-dashed border-slate-200 rounded-xl text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:bg-slate-50 transition-all">
+                                        <UploadCloud size={16} /> Tải ảnh lên ({form.images?.length})
+                                    </label>
                                 </div>
                             </div>
                         </div>
+
+                        {form.images?.length > 0 && (
+                            <div className="flex gap-2 mt-3 overflow-x-auto pb-2 custom-scrollbar">
+                                {form.images.map((url, idx) => (
+                                    <div key={idx} className="relative w-12 h-12 flex-shrink-0 group">
+                                        <img src={url} className="w-full h-full object-cover rounded-lg border border-slate-100" />
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm(f => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))}
+                                            className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100"
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="mt-4">
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Tiện nghi riêng (Mỗi dòng 1 mục)</label>
@@ -490,14 +548,15 @@ const RoomTypeModal = ({ service, onClose, showToast }) => {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
                                         <h5 className="font-black text-slate-800">{rt.name}</h5>
-                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                                            rt.rank === 'vip' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${rt.rank === 'vip' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
                                             rt.rank === 'premium' ? 'bg-sky-100 text-sky-700 border border-sky-200' :
-                                            'bg-slate-100 text-slate-600 border border-slate-200'
-                                        }`}>
+                                                'bg-slate-100 text-slate-600 border border-slate-200'
+                                            }`}>
                                             {rt.rank === 'vip' ? '👑 VIP' : rt.rank === 'premium' ? '✨ Cao cấp' : '🏠 Bình dân'}
                                         </span>
-                                        <span className="px-2 py-0.5 bg-white text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black">{rt.total_rooms} Phòng</span>
+                                        <span className="px-2 py-0.5 bg-white text-emerald-600 border border-emerald-100 rounded-lg text-[10px] font-black">
+                                            {rt.inventory} Phòng • {rt.total_rooms} PN
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-4 mt-1.5">
                                         <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase">
@@ -631,6 +690,224 @@ const AmenitiesModal = ({ service, onClose, showToast, onSaved }) => {
 };
 
 // ============================================================================
+// AVAILABILITY MODAL (quản lý số chỗ/phòng trống theo ngày)
+// ============================================================================
+const AvailabilityModal = ({ service, onClose, showToast }) => {
+    const [loading, setLoading] = useState(true);
+    const [availability, setAvailability] = useState([]);
+    const [roomTypes, setRoomTypes] = useState([]);
+    const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    // Batch form
+    const [batchForm, setBatchForm] = useState({
+        dates: [],
+        total_slots: service.max_guests || 0,
+        price_override: '',
+        is_blocked: false
+    });
+
+    const isHotel = service.type === 'hotel' || service.type === 'homestay';
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                if (isHotel) {
+                    const rtRes = await providerApi.getRoomTypes(service.id);
+                    setRoomTypes(rtRes.data || []);
+                    if (rtRes.data?.length > 0) setSelectedRoomTypeId(rtRes.data[0].id);
+                }
+                await fetchAvailability();
+            } catch (err) {
+                showToast('Không tải được dữ liệu', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [service.id]);
+
+    const fetchAvailability = async (rtId = selectedRoomTypeId) => {
+        const res = await providerApi.getAvailability(service.id, {
+            room_type_id: isHotel ? rtId : undefined,
+            start_date: new Date().toISOString().split('T')[0],
+            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        });
+        setAvailability(res.data || []);
+    };
+
+    useEffect(() => {
+        if (isHotel && selectedRoomTypeId) {
+            fetchAvailability(selectedRoomTypeId);
+            const rt = roomTypes.find(r => r.id === selectedRoomTypeId);
+            if (rt) setBatchForm(f => ({ ...f, total_slots: rt.inventory || 0 }));
+        }
+    }, [selectedRoomTypeId, roomTypes]);
+
+    const handleBatchSubmit = async (e) => {
+        e.preventDefault();
+        if (batchForm.dates.length === 0) return showToast('Vui lòng chọn ít nhất một ngày', 'error');
+        setSaving(true);
+        try {
+            await providerApi.updateAvailabilityBatch(service.id, {
+                ...batchForm,
+                room_type_id: isHotel ? selectedRoomTypeId : undefined,
+                price_override: batchForm.price_override ? Number(batchForm.price_override) : null,
+                total_slots: Number(batchForm.total_slots)
+            });
+            showToast('Cập nhật thành công!');
+            fetchAvailability();
+            setBatchForm(f => ({ ...f, dates: [] }));
+        } catch {
+            showToast('Lỗi khi cập nhật', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const toggleDate = (date) => {
+        setBatchForm(f => ({
+            ...f,
+            dates: f.dates.includes(date) ? f.dates.filter(d => d !== date) : [...f.dates, date]
+        }));
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[110]">
+            <div className="bg-white rounded-[2.5rem] w-[900px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-10 pt-10 pb-6 border-b border-slate-50">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-[1.5rem] flex items-center justify-center shadow-inner">
+                            <CalendarDays size={28} />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Trạng thái khả dụng</h3>
+                            <p className="text-sm text-slate-400 font-medium">{service.name} • Quản lý số chỗ trống và giá</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-3 hover:bg-slate-50 rounded-2xl transition-colors"><X size={24} /></button>
+                </div>
+
+                <div className="flex-1 overflow-hidden flex">
+                    {/* Sidebar: Batch Update */}
+                    <div className="w-[340px] border-r border-slate-50 p-8 overflow-y-auto custom-scrollbar bg-slate-50/30">
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                            <Settings2 size={16} className="text-indigo-500" /> Thiết lập nhanh
+                        </h4>
+
+                        {isHotel && (
+                            <div className="mb-6">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Chọn loại phòng</label>
+                                <select
+                                    value={selectedRoomTypeId}
+                                    onChange={e => setSelectedRoomTypeId(e.target.value)}
+                                    className="w-full px-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                >
+                                    {roomTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+                                </select>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleBatchSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Số chỗ / Phòng trống</label>
+                                <input type="number" required value={batchForm.total_slots} onChange={e => setBatchForm({ ...batchForm, total_slots: e.target.value })} className="w-full px-5 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Giá ghi đè (VNĐ)</label>
+                                <input type="number" value={batchForm.price_override} onChange={e => setBatchForm({ ...batchForm, price_override: e.target.value })} className="w-full px-5 py-3.5 bg-white border border-slate-100 rounded-2xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Trống = giá gốc" />
+                            </div>
+                            <div className="flex items-center gap-3 px-1">
+                                <input type="checkbox" id="is_blocked" checked={batchForm.is_blocked} onChange={e => setBatchForm({ ...batchForm, is_blocked: e.target.checked })} className="w-5 h-5 accent-indigo-600 rounded-lg cursor-pointer" />
+                                <label htmlFor="is_blocked" className="text-sm font-bold text-slate-700 cursor-pointer">Chặn ngày này</label>
+                            </div>
+
+                            <div className="pt-4">
+                                <button type="submit" disabled={saving || batchForm.dates.length === 0} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                                    {saving ? <Loader2 size={20} className="animate-spin" /> : (
+                                        <>Cập nhật cho {batchForm.dates.length} ngày</>
+                                    )}
+                                </button>
+                                <p className="text-[10px] text-center mt-3 text-slate-400 font-medium italic">* Chọn các ngày ở lịch bên phải để áp dụng</p>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* Main View: Calendar/List */}
+                    <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+                        <div className="flex items-center justify-between mb-8">
+                            <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <RotateCw size={16} className="text-emerald-500" /> Trạng thái 30 ngày tới
+                            </h4>
+                            <div className="flex gap-4">
+                                <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full" /> <span className="text-[10px] font-bold text-slate-500">Còn trống</span></div>
+                                <div className="flex items-center gap-2"><div className="w-3 h-3 bg-rose-500 rounded-full" /> <span className="text-[10px] font-bold text-slate-500">Đã chặn</span></div>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-indigo-500" size={40} /></div>
+                        ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {Array.from({ length: 30 }).map((_, i) => {
+                                    const date = new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                                    const d = new Date(date);
+                                    const dayStr = d.toLocaleDateString('vi-VN', { weekday: 'short' });
+                                    const dateStr = d.getDate() + '/' + (d.getMonth() + 1);
+
+                                    const status = availability.find(a => a.available_date === date);
+                                    const isSelected = batchForm.dates.includes(date);
+                                    const isBlocked = status?.is_blocked;
+
+                                    return (
+                                        <div
+                                            key={date}
+                                            onClick={() => toggleDate(date)}
+                                            className={`relative p-4 rounded-3xl border-2 cursor-pointer transition-all ${isSelected ? 'border-indigo-600 bg-indigo-50 shadow-lg shadow-indigo-100 ring-2 ring-indigo-600/10' :
+                                                isBlocked ? 'border-rose-100 bg-rose-50/50' :
+                                                    'border-slate-50 bg-white hover:border-slate-200'
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className={`text-[10px] font-black uppercase tracking-tighter ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>{dayStr}</span>
+                                                <div className={`w-2 h-2 rounded-full ${isBlocked ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                                            </div>
+                                            <div className={`text-lg font-black ${isSelected ? 'text-indigo-900' : 'text-slate-900'}`}>{dateStr}</div>
+
+                                            <div className="mt-2 space-y-1">
+                                                <div className="text-[10px] font-bold text-slate-500 flex justify-between">
+                                                    <span>Chỗ:</span>
+                                                    <span className={status ? 'text-slate-900' : 'text-slate-300'}>
+                                                        {status ? `${status.booked_slots}/${status.total_slots}` : 'Mặc định'}
+                                                    </span>
+                                                </div>
+                                                {status?.price_override && (
+                                                    <div className="text-[10px] font-black text-rose-500 truncate">
+                                                        {Number(status.price_override).toLocaleString()}₫
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {isSelected && (
+                                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg">
+                                                    <CheckCircle size={14} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 const MyServices = () => {
@@ -659,10 +936,13 @@ const MyServices = () => {
     const [scheduleService, setScheduleService] = useState(null);
     const [amenitiesService, setAmenitiesService] = useState(null);
     const [roomTypeService, setRoomTypeService] = useState(null);
+    const [availabilityService, setAvailabilityService] = useState(null);
 
     const initialForm = {
         name: '', type: 'tour', category_id: '', location_id: '',
-        base_price: '', description: '', address: '', max_guests: '',
+        base_price: '', description: '', address: '',
+        latitude: null, longitude: null,
+        max_guests: '',
         price_unit: 'per_person', duration_days: '', duration_nights: ''
     };
     const [form, setForm] = useState(initialForm);
@@ -729,6 +1009,8 @@ const MyServices = () => {
             base_price: service.base_price,
             description: service.description || '',
             address: service.address || '',
+            latitude: service.latitude || null,
+            longitude: service.longitude || null,
             max_guests: service.max_guests || '',
             price_unit: service.price_unit,
             duration_days: service.duration_days || '',
@@ -761,6 +1043,8 @@ const MyServices = () => {
                 max_guests: form.max_guests ? Number(form.max_guests) : null,
                 duration_days: form.duration_days ? Number(form.duration_days) : null,
                 duration_nights: form.duration_nights ? Number(form.duration_nights) : null,
+                latitude: form.latitude ? Number(form.latitude) : null,
+                longitude: form.longitude ? Number(form.longitude) : null,
                 images: imageUrls
             };
 
@@ -930,6 +1214,16 @@ const MyServices = () => {
                                                     </button>
                                                 )}
 
+                                                {/* Trạng thái khả dụng (Số chỗ/phòng) */}
+                                                <button
+                                                    onClick={() => setAvailabilityService(service)}
+                                                    title="Trạng thái khả dụng"
+                                                    className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl flex flex-col items-center gap-0.5"
+                                                >
+                                                    <CalendarDays size={15} />
+                                                    <span className="text-[9px] font-bold leading-none">Trống</span>
+                                                </button>
+
                                                 <button onClick={() => handleOpenEdit(service)} className="p-2 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl flex flex-col items-center gap-0.5">
                                                     <Edit3 size={15} />
                                                     <span className="text-[9px] font-bold leading-none">Sửa</span>
@@ -990,8 +1284,8 @@ const MyServices = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <select value={form.type} onChange={e => {
                                         const newType = e.target.value;
-                                        setForm({ 
-                                            ...form, 
+                                        setForm({
+                                            ...form,
                                             type: newType,
                                             duration_days: newType !== 'tour' ? '' : form.duration_days,
                                             duration_nights: newType !== 'tour' ? '' : form.duration_nights,
@@ -1009,14 +1303,23 @@ const MyServices = () => {
                                     </select>
                                 </div>
 
-                                <div className={`grid ${form.type === 'tour' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-                                    <select required value={form.location_id} onChange={e => setForm({ ...form, location_id: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none">
-                                        <option value="">-- Địa điểm --</option>
-                                        {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-                                    </select>
-                                    {form.type !== 'tour' && (
-                                        <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Địa chỉ chi tiết" />
-                                    )}
+                                <div className="space-y-4">
+                                    <div className={`grid ${form.type === 'tour' ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                                        <select required value={form.location_id} onChange={e => setForm({ ...form, location_id: e.target.value })} className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none">
+                                            <option value="">-- Điểm đến (Tỉnh/Thành) --</option>
+                                            {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                                        </select>
+
+                                        {form.type !== 'tour' && (
+                                            <input
+                                                value={form.address}
+                                                onChange={e => setForm({ ...form, address: e.target.value })}
+                                                className="px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none"
+                                                placeholder="Địa chỉ chi tiết"
+                                            />
+                                        )}
+                                    </div>
+
                                 </div>
 
                                 {form.type === 'tour' && (
@@ -1025,10 +1328,10 @@ const MyServices = () => {
                                             <input type="number" min="0" value={form.duration_days} onChange={e => {
                                                 const days = e.target.value;
                                                 const val = days === '' ? '' : Math.max(0, parseInt(days) || 0);
-                                                setForm({ 
-                                                    ...form, 
-                                                    duration_days: val, 
-                                                    duration_nights: val !== '' && Number(form.duration_nights) >= Number(val) ? String(Math.max(0, Number(val) - 1)) : form.duration_nights 
+                                                setForm({
+                                                    ...form,
+                                                    duration_days: val,
+                                                    duration_nights: val !== '' && Number(form.duration_nights) >= Number(val) ? String(Math.max(0, Number(val) - 1)) : form.duration_nights
                                                 });
                                             }} className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:outline-none" placeholder="Số ngày (VD: 3)" />
                                             <span className="text-xs font-bold text-slate-400">Ngày</span>
@@ -1091,6 +1394,15 @@ const MyServices = () => {
                 <RoomTypeModal
                     service={roomTypeService}
                     onClose={() => setRoomTypeService(null)}
+                    showToast={showToast}
+                />
+            )}
+
+            {/* Modal Trạng thái khả dụng */}
+            {availabilityService && (
+                <AvailabilityModal
+                    service={availabilityService}
+                    onClose={() => setAvailabilityService(null)}
                     showToast={showToast}
                 />
             )}

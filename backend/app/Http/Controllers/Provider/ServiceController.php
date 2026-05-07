@@ -82,6 +82,8 @@ class ServiceController extends Controller
             'price_unit' => 'nullable|string',
             'duration_days' => 'nullable|integer|min:0',
             'duration_nights' => 'nullable|integer|min:0',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'images' => 'nullable|array',
             'images.*' => 'url'
         ]);
@@ -105,6 +107,8 @@ class ServiceController extends Controller
                     'price_unit' => $validated['price_unit'] ?? 'per_person',
                     'duration_days' => $validated['duration_days'] ?? null,
                     'duration_nights' => $validated['duration_nights'] ?? null,
+                    'latitude' => $validated['latitude'] ?? null,
+                    'longitude' => $validated['longitude'] ?? null,
                     'status' => 'pending_review'
                 ]);
 
@@ -196,6 +200,8 @@ class ServiceController extends Controller
             'price_unit' => 'nullable|string',
             'duration_days' => 'nullable|integer|min:0',
             'duration_nights' => 'nullable|integer|min:0',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'images' => 'nullable|array',
             'images.*' => 'url'
         ]);
@@ -421,6 +427,7 @@ class ServiceController extends Controller
             'description'       => 'nullable|string',
             'base_price'        => 'required|numeric|min:0',
             'total_rooms'       => 'required|integer|min:1',
+            'inventory'         => 'required|integer|min:1',
             'capacity_adults'   => 'required|integer|min:1',
             'capacity_children' => 'nullable|integer|min:0',
             'amenities'         => 'nullable|array',
@@ -453,6 +460,7 @@ class ServiceController extends Controller
             'description'       => 'nullable|string',
             'base_price'        => 'sometimes|numeric|min:0',
             'total_rooms'       => 'sometimes|integer|min:1',
+            'inventory'         => 'sometimes|integer|min:1',
             'capacity_adults'   => 'sometimes|integer|min:1',
             'capacity_children' => 'nullable|integer|min:0',
             'amenities'         => 'nullable|array',
