@@ -5,11 +5,13 @@ import { Heart, MessageCircle, Bell, Bed, MapPin, Car } from 'lucide-react-nativ
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
+import { useNavigation } from '@react-navigation/native';
+
 const HEADER_DARK = '#0077B6';
 
 const HomeHeader = ({ activeCategory, setActiveCategory }) => {
-  // Lấy chiều cao tai thỏ để đẩy nội dung xuống dưới
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   const categories = [
     { id: 'stay', label: 'Lưu trú', icon: Bed },
@@ -22,7 +24,7 @@ const HomeHeader = ({ activeCategory, setActiveCategory }) => {
       {/* Top Bar — nội dung nằm dưới tai thỏ */}
       <View style={styles.topBar}>
         <View style={styles.sideColumn}>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Wishlist')}>
             <Heart color="rgba(255,255,255,0.9)" size={22} />
           </TouchableOpacity>
         </View>
