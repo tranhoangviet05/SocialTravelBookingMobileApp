@@ -81,6 +81,11 @@ class ServiceDetailResource extends JsonResource
                     ] : null,
                 ]);
             }),
+            'availabilities' => $this->availabilities ? $this->availabilities->map(fn($a) => [
+                'date' => $a->available_date,
+                'remaining' => (int) ($a->total_slots - $a->booked_slots),
+                'price_override' => $a->price_override ? (float) $a->price_override : null,
+            ]) : [],
             'room_types' => $this->when($this->relationLoaded('roomTypes'), function () {
                 return $this->roomTypes->map(fn($rt) => [
                     'id' => $rt->id,
@@ -95,11 +100,6 @@ class ServiceDetailResource extends JsonResource
                     'amenities' => $rt->amenities ?? [],
                     'images' => $rt->images ?? [],
                     'status' => $rt->status,
-                    'availabilities' => $rt->availabilities->map(fn($a) => [
-                        'date' => $a->available_date,
-                        'remaining' => (int) ($a->total_slots - $a->booked_slots),
-                        'price_override' => $a->price_override ? (float) $a->price_override : null,
-                    ]),
                 ]);
             }),
         ];

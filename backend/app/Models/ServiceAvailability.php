@@ -25,9 +25,4 @@ class ServiceAvailability extends Model
     {
         return $this->belongsTo(Service::class);
     }
-
-    public function roomType()
-    {
-        return $this->belongsTo(HotelRoomType::class, 'room_type_id');
-    }
 }

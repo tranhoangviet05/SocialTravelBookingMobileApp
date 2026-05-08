@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, FlatList,
-  TouchableOpacity, Image, Alert
+  TouchableOpacity, Image, Alert, StatusBar
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronLeft, MapPin, Star, Trash2, HeartCrack } from 'lucide-react-native';
@@ -12,6 +12,7 @@ import { BASE_URL } from '../api/apiClient';
 import Skeleton from '../components/common/Skeleton';
 
 const WishlistScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,33 +61,33 @@ const WishlistScreen = ({ navigation }) => {
     const isTour = item.type === 'tour';
     const isHotel = item.type === 'hotel';
     const isHomestay = item.type === 'homestay';
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate('ServiceDetail', { service: item })}
       >
         <Image source={{ uri: getImageUrl(item.media) }} style={styles.image} />
-        
+
         <View style={styles.cardContent}>
           <Text style={styles.typeBadge}>
-            {isTour ? '🗺️ Tour' : isHotel ? '🏨 Khách sạn' : isHomestay ? '🏡 Homestay' : '🚌 Dịch vụ'}
+            {isTour ? 'Tour' : isHotel ? 'Khách sạn' : isHomestay ? 'Homestay' : 'Dịch vụ'}
           </Text>
           <Text style={styles.title} numberOfLines={2}>{item.name}</Text>
-          
+
           <View style={styles.locationRow}>
             <MapPin size={12} color={Colors.textSecondary} />
             <Text style={styles.locationText} numberOfLines={1}>
               {item.destination?.name || 'Việt Nam'}
             </Text>
           </View>
-          
+
           <View style={styles.bottomRow}>
             <View style={styles.priceContainer}>
               <Text style={styles.priceLabel}>Từ</Text>
               <Text style={styles.priceValue}>{Number(item.base_price || 0).toLocaleString()}đ</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.deleteButton}
               onPress={() => {
                 Alert.alert(
@@ -108,20 +109,21 @@ const WishlistScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      {/* Header tràn viền */}
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ChevronLeft color="#000" size={24} />
+          <ChevronLeft color={Colors.text} size={24} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Danh sách yêu thích</Text>
+        <Text style={styles.headerTitle}>Yêu thích</Text>
         <View style={{ width: 40 }} />
       </View>
 
       {/* Content */}
       {loading ? (
         <View style={styles.listContainer}>
-          {[1,2,3].map(i => (
+          {[1, 2, 3].map(i => (
             <View key={i} style={styles.card}>
               <Skeleton width={100} height={100} borderRadius={12} />
               <View style={styles.cardContent}>
@@ -143,7 +145,7 @@ const WishlistScreen = ({ navigation }) => {
           </View>
           <Text style={styles.emptyTitle}>Chưa có dịch vụ nào</Text>
           <Text style={styles.emptyDesc}>Hãy thả tim những dịch vụ bạn quan tâm để dễ dàng xem lại nhé.</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.exploreButton}
             onPress={() => navigation.navigate('Main')}
           >
@@ -159,25 +161,34 @@ const WishlistScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
-    paddingVertical: 15,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9'
+    borderBottomColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+    zIndex: 10
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center' },
+  backButton: {
+    width: 40, height: 40, borderRadius: 12, backgroundColor: '#F8FAFC',
+    alignItems: 'center', justifyContent: 'center'
+  },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
-  
+
   listContainer: { padding: 15, paddingBottom: 110 },
   card: {
     flexDirection: 'row',
@@ -193,11 +204,11 @@ const styles = StyleSheet.create({
   },
   image: { width: 100, height: 100, borderRadius: 12 },
   cardContent: { flex: 1, marginLeft: 12, justifyContent: 'center' },
-  typeBadge: { 
-    fontSize: 10, fontWeight: 'bold', color: Colors.primary, 
-    backgroundColor: '#E0F2FE', alignSelf: 'flex-start', 
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, 
-    marginBottom: 6 
+  typeBadge: {
+    fontSize: 10, fontWeight: 'bold', color: Colors.primary,
+    backgroundColor: '#E0F2FE', alignSelf: 'flex-start',
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
+    marginBottom: 6
   },
   title: { fontSize: 14, fontWeight: 'bold', color: Colors.text, marginBottom: 4 },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },

@@ -36,16 +36,10 @@ class AvailabilityController extends Controller
 
         $startDate = $request->get('start_date', Carbon::now()->toDateString());
         $endDate = $request->get('end_date', Carbon::now()->addDays(30)->toDateString());
-        $roomTypeId = $request->get('room_type_id'); // Optional cho Hotel
-
         $query = ServiceAvailability::where('service_id', $serviceId)
             ->whereBetween('available_date', [$startDate, $endDate]);
 
-        if ($roomTypeId) {
-            $query->where('room_type_id', $roomTypeId);
-        } else {
-            $query->whereNull('room_type_id');
-        }
+        $availability = $query->orderBy('available_date')->get();
 
         $availability = $query->orderBy('available_date')->get();
 
@@ -68,7 +62,6 @@ class AvailabilityController extends Controller
         }
 
         $validated = $request->validate([
-            'room_type_id' => 'nullable|uuid|exists:hotel_room_types,id',
             'dates' => 'required|array|min:1',
             'dates.*' => 'date_format:Y-m-d',
             'total_slots' => 'required|integer|min:0',
@@ -76,22 +69,14 @@ class AvailabilityController extends Controller
             'is_blocked' => 'boolean'
         ]);
 
-        $roomTypeId = $validated['room_type_id'] ?? null;
         $defaultSlots = $service->max_guests || 0;
 
-        // Kiểm tra room_type có thuộc service không và lấy inventory làm mặc định
-        if ($roomTypeId) {
-            $roomType = HotelRoomType::where('service_id', $serviceId)->findOrFail($roomTypeId);
-            $defaultSlots = $roomType->inventory;
-        }
-
         try {
-            DB::transaction(function () use ($serviceId, $roomTypeId, $validated) {
+            DB::transaction(function () use ($serviceId, $validated) {
                 foreach ($validated['dates'] as $date) {
                     ServiceAvailability::updateOrCreate(
                         [
                             'service_id' => $serviceId,
-                            'room_type_id' => $roomTypeId,
                             'available_date' => $date
                         ],
                         [

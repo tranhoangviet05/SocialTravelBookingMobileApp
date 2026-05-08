@@ -84,7 +84,7 @@ class Service extends Model
         return $this->hasMany(ServiceSchedule::class);
     }
 
-    public function availability()
+    public function availabilities()
     {
         return $this->hasMany(ServiceAvailability::class);
     }

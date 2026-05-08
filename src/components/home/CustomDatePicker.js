@@ -4,9 +4,16 @@ import RBSheet from 'react-native-raw-bottom-sheet';
 import { X, ChevronRight } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 
-const CustomDatePicker = ({ bottomSheetRef, onSelectRange }) => {
+const CustomDatePicker = ({ bottomSheetRef, onSelectRange, initialStartDate, initialEndDate }) => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  
+  // Đồng bộ ngày từ ngoài vào khi component mount hoặc khi props thay đổi
+  React.useEffect(() => {
+    if (initialStartDate) setStartDate(new Date(initialStartDate));
+    if (initialEndDate) setEndDate(new Date(initialEndDate));
+  }, [initialStartDate, initialEndDate]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [currentMonth] = useState(new Date());

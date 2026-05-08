@@ -21,7 +21,7 @@ class PaymentController extends Controller
     {
         $request->validate([
             'booking_id'      => 'required|uuid|exists:bookings,id',
-            'payment_method'  => 'required|in:sepay,wallet',
+            'payment_method'  => 'required|in:sepay',
         ]);
 
         $userId  = $request->user->id;
@@ -37,72 +37,10 @@ class PaymentController extends Controller
             ], 404);
         }
 
-        if ($request->payment_method === 'wallet') {
-            return $this->initiateWalletPayment($booking, $userId);
-        }
-
         // SePay QR payment
         return $this->initiateSepayPayment($booking);
     }
 
-    /**
-     * Thanh toán qua Ví nội bộ (trừ tiền trực tiếp)
-     */
-    private function initiateWalletPayment(Booking $booking, string $userId)
-    {
-        try {
-            $result = DB::transaction(function () use ($booking, $userId) {
-                $wallet = Wallet::where('user_id', $userId)->lockForUpdate()->first();
-
-                if (!$wallet) {
-                    throw new \Exception('Bạn chưa có ví điện tử. Vui lòng liên hệ hỗ trợ.');
-                }
-
-                if ($wallet->balance < $booking->total_amount) {
-                    throw new \Exception('Số dư ví không đủ. Vui lòng nạp thêm tiền.');
-                }
-
-                $balanceBefore = $wallet->balance;
-                $wallet->balance -= $booking->total_amount;
-                $wallet->save();
-
-                WalletTransaction::create([
-                    'wallet_id'      => $wallet->id,
-                    'booking_id'     => $booking->id,
-                    'type'           => 'booking_payment',
-                    'amount'         => -$booking->total_amount,
-                    'balance_before' => $balanceBefore,
-                    'balance_after'  => $wallet->balance,
-                    'note'           => "Thanh toán đặt chỗ #{$booking->booking_code}",
-                ]);
-
-                $booking->payment_method = 'wallet';
-                $booking->payment_status = 'paid';
-                $booking->paid_at        = now();
-                $booking->status         = 'confirmed';
-                $booking->save();
-
-                return $booking;
-            });
-
-            return response()->json([
-                'success'  => true,
-                'message'  => 'Thanh toán ví thành công!',
-                'redirect' => 'success',
-                'data'     => [
-                    'booking_code'   => $result->booking_code,
-                    'total_amount'   => $result->total_amount,
-                    'payment_method' => 'wallet',
-                    'paid_at'        => $result->paid_at,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
-        }
-    }
 
     /**
      * Tạo thông tin thanh toán SePay QR

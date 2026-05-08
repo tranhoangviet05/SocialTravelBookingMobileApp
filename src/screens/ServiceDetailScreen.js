@@ -375,32 +375,6 @@ const ServiceDetailScreen = ({ route, navigation }) => {
       return;
     }
 
-    setBookingLoading(true);
-    // Lấy thông tin profile mới nhất để kiểm tra
-    let currentProfile = touristProfile;
-    try {
-      const res = await profileApi.getProfile();
-      if (res.success) {
-        currentProfile = res.data;
-        setTouristProfile(currentProfile); // Cập nhật lại state
-      }
-    } catch (e) {
-      console.error('Lỗi khi lấy profile mới nhất:', e);
-    }
-    setBookingLoading(false);
-
-    if (!profileApi.checkCompletion(currentProfile)) {
-      Alert.alert(
-        'Thông tin chưa đầy đủ',
-        'Vui lòng cập nhật đầy đủ thông tin khách du lịch (Họ tên, SĐT, Giới tính, Ngày sinh, Quốc tịch) trước khi đặt chỗ.',
-        [
-          { text: 'Để sau', style: 'cancel' },
-          { text: 'Cập nhật ngay', onPress: () => navigation.navigate('EditProfile') }
-        ]
-      );
-      return;
-    }
-
     // Chuyển thẳng sang Checkout với dữ liệu mặc định (đã serializable)
     const checkoutData = {
       service: serviceData,

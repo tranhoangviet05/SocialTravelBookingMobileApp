@@ -26,7 +26,7 @@ class BookingController extends Controller
         $request->validate([
             'service_id'   => 'required|uuid|exists:services,id',
             'check_in_date' => 'required|date|after_or_equal:today',
-            'check_out_date' => 'nullable|date|after:check_in_date',
+            'check_out_date' => 'nullable|date|after_or_equal:check_in_date',
             'num_adults'  => 'required|integer|min:1|max:50',
             'num_children' => 'nullable|integer|min:0|max:20',
             'contact_name'  => 'required|string|max:255',
@@ -34,7 +34,7 @@ class BookingController extends Controller
             'contact_phone' => 'required|string|max:20',
             'special_requests' => 'nullable|string|max:1000',
             'coupon_code'  => 'nullable|string|max:50',
-            'payment_method' => 'required|in:wallet,momo,vnpay,banking,sepay',
+            'payment_method' => 'required|in:momo,vnpay,banking,sepay',
             'room_type_id' => 'nullable|uuid|exists:hotel_room_types,id',
         ]);
 
@@ -121,7 +121,6 @@ class BookingController extends Controller
                     $availability = \App\Models\ServiceAvailability::lockForUpdate()->firstOrCreate(
                         [
                             'service_id' => $service->id,
-                            'room_type_id' => $request->room_type_id,
                             'available_date' => $date
                         ],
                         [

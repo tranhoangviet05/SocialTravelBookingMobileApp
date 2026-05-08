@@ -18,9 +18,7 @@ class Booking extends Model
             'check_in_date' => 'date',
             'check_out_date' => 'date',
             'paid_at' => 'datetime',
-            'released_at' => 'datetime',
             'cancelled_at' => 'datetime',
-            'refunded_at' => 'datetime',
         ];
     }
 

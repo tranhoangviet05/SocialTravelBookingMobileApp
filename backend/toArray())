@@ -1,22 +1,22 @@
 
-   Psy\Exception\ParseErrorException 
+   InvalidArgumentException 
 
-  PHP Parse error: Syntax error, unexpected ';' on line 1
+  Unexpected end of input
 
-  at vendor\psy\psysh\src\Exception\ParseErrorException.php:44
-     40▕      * @param \PhpParser\Error $e
-     41▕      */
-     42▕     public static function fromParseError(\PhpParser\Error $e): self
-     43▕     {
-  ➜  44▕         return new self($e->getRawMessage(), $e->getAttributes());
-     45▕     }
-     46▕ }
-     47▕
+  at vendor\psy\psysh\src\Shell.php:1325
+    1321▕ 
+    1322▕         if (!$this->hasValidCode()) {
+    1323▕             $this->popCodeStack();
+    1324▕ 
+  ➜ 1325▕             throw new \InvalidArgumentException('Unexpected end of input');
+    1326▕         }
+    1327▕     }
+    1328▕ 
+    1329▕     /**
 
-  1   vendor\psy\psysh\src\CodeCleaner.php:488
-      Psy\Exception\ParseErrorException::fromParseError(Object(PhpParser\Error))
+  1   vendor\psy\psysh\src\Shell.php:1865
+      Psy\Shell::setCode("print_r(App\Models\Booking::latest()-")
 
-  2   vendor\psy\psysh\src\CodeCleaner.php:269
-      Psy\CodeCleaner::parse("<?php print_r(\App\Models\ServiceAvailability::first()?-;
-")
+  2   vendor\laravel\tinker\src\Console\TinkerCommand.php:77
+      Psy\Shell::execute("print_r(App\Models\Booking::latest()-")
 
