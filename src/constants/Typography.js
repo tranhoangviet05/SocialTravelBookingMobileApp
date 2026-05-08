@@ -12,6 +12,13 @@ export function normalize(size) {
 }
 
 export const Typography = {
+  // Font Families
+  fontFamily: {
+    regular: 'Quicksand-Regular',
+    medium: 'Quicksand-Medium',
+    semibold: 'Quicksand-SemiBold',
+    bold: 'Quicksand-Bold',
+  },
   // Font Sizes - Được normalize để tự động to ra trên màn hình lớn
   size: {
     h1: normalize(34),    // Tiêu đề lớn
@@ -38,5 +45,14 @@ export const Typography = {
     md: normalize(16),
     lg: normalize(24),
     xl: normalize(32),
+  },
+  getFont: (weight = 'regular') => {
+    const fonts = {
+      regular: 'Quicksand-Regular',
+      medium: 'Quicksand-Medium',
+      semibold: 'Quicksand-SemiBold',
+      bold: 'Quicksand-Bold',
+    };
+    return { fontFamily: fonts[weight] || fonts.regular };
   }
 };

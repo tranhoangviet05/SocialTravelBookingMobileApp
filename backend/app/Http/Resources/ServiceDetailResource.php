@@ -27,10 +27,10 @@ class ServiceDetailResource extends JsonResource
             'rating_avg' => (float) ($this->rating_avg ?? 0),
             'total_reviews' => (int) ($this->total_reviews ?? $this->reviews()->count()),
             'total_bookings' => (int) ($this->total_bookings ?? $this->bookings()->count()),
-            'amenities' => $this->amenities ?? [],
+            'amenities' => is_array($this->amenities) ? array_values($this->amenities) : (is_string($this->amenities) ? array_values(array_filter(explode(',', trim($this->amenities, '{}')))) : []),
             'includes' => $this->includes ?? [],
             'excludes' => $this->excludes ?? [],
-            'tags' => $this->tags ?? [],
+            'tags' => is_array($this->tags) ? array_values($this->tags) : (is_string($this->tags) ? array_values(array_filter(explode(',', trim($this->tags, '{}')))) : []),
             'media' => $this->media->map(fn($m) => [
                 'id' => $m->id,
                 'url' => $m->url,
@@ -41,6 +41,7 @@ class ServiceDetailResource extends JsonResource
                 'day_number' => (int) $s->day_number,
                 'title' => $s->title,
                 'description' => $s->description,
+                'activities' => $s->activities ?? [],
                 'time' => $s->time,
             ])->sortBy('day_number')->values(),
             'provider' => $this->when($this->relationLoaded('provider'), function () {
@@ -88,11 +89,17 @@ class ServiceDetailResource extends JsonResource
                     'description' => $rt->description,
                     'base_price' => (float) $rt->base_price,
                     'total_rooms' => (int) $rt->total_rooms,
+                    'inventory' => (int) $rt->inventory,
                     'capacity_adults' => (int) $rt->capacity_adults,
                     'capacity_children' => (int) $rt->capacity_children,
                     'amenities' => $rt->amenities ?? [],
                     'images' => $rt->images ?? [],
                     'status' => $rt->status,
+                    'availabilities' => $rt->availabilities->map(fn($a) => [
+                        'date' => $a->available_date,
+                        'remaining' => (int) ($a->total_slots - $a->booked_slots),
+                        'price_override' => $a->price_override ? (float) $a->price_override : null,
+                    ]),
                 ]);
             }),
         ];

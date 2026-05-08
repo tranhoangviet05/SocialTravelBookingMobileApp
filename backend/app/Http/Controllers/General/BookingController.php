@@ -93,32 +93,39 @@ class BookingController extends Controller
 
             // Tạo booking
             $booking = DB::transaction(function () use ($request, $service, $adultCount, $childCount, $subtotal, $discountAmount, $totalAmount, $appliedCoupon, $basePrice) {
-                // --- Logic Kiểm tra & Trừ chỗ trống (Availability) ---
-                $checkIn = Carbon::parse($request->check_in_date);
-                $checkOut = $request->check_out_date ? Carbon::parse($request->check_out_date) : $checkIn->copy();
                 
-                // Số ngày cần kiểm tra (Với khách sạn là từ check-in đến trước check-out 1 ngày)
-                $dates = [];
-                $tempDate = $checkIn->copy();
-                while ($tempDate->lt($checkOut) || ($tempDate->eq($checkIn) && $checkIn->eq($checkOut))) {
-                    $dates[] = $tempDate->toDateString();
-                    $tempDate->addDay();
-                    if ($service->type !== 'hotel' && $service->type !== 'homestay') break; // Tour/Xe chỉ tính 1 ngày khởi hành
-                }
+                // --- PHÂN TÁCH LOGIC QUẢN LÝ KHO/SLOT ---
+                
+                if (in_array($service->type, ['hotel', 'homestay'])) {
+                    // 1. LOGIC CHO CHỖ Ở: Trừ trực tiếp vào inventory của HotelRoomType
+                    if (!$request->room_type_id) {
+                        throw new \Exception("Vui lòng chọn loại phòng.");
+                    }
 
-                $requiredSlots = $request->room_type_id ? 1 : ($adultCount + $childCount);
+                    $roomType = \App\Models\HotelRoomType::lockForUpdate()->find($request->room_type_id);
+                    
+                    if (!$roomType || $roomType->inventory <= 0) {
+                        throw new \Exception("Xin lỗi, loại phòng này đã hết chỗ.");
+                    }
 
-                foreach ($dates as $date) {
-                    $availability = \App\Models\ServiceAvailability::firstOrCreate(
+                    // Trừ 1 vào inventory (mỗi booking chỗ ở tính là 1 phòng)
+                    $roomType->decrement('inventory');
+                    
+                } else {
+                    // 2. LOGIC CHO TOUR/KHÁC: Dùng bảng service_availability quản lý theo ngày
+                    $checkIn = Carbon::parse($request->check_in_date);
+                    $date = $checkIn->toDateString();
+                    
+                    $requiredSlots = $adultCount + $childCount;
+
+                    $availability = \App\Models\ServiceAvailability::lockForUpdate()->firstOrCreate(
                         [
                             'service_id' => $service->id,
                             'room_type_id' => $request->room_type_id,
                             'available_date' => $date
                         ],
                         [
-                            'total_slots' => $request->room_type_id 
-                                ? (\App\Models\HotelRoomType::find($request->room_type_id)->inventory ?? 1)
-                                : ($service->max_guests ?? 10),
+                            'total_slots' => $service->max_guests ?? 10,
                             'booked_slots' => 0,
                             'is_blocked' => false
                         ]
@@ -129,7 +136,7 @@ class BookingController extends Controller
                     }
 
                     if (($availability->booked_slots + $requiredSlots) > $availability->total_slots) {
-                        throw new \Exception("Xin lỗi, đã hết chỗ vào ngày " . $date);
+                        throw new \Exception("Xin lỗi, tour đã hết chỗ vào ngày " . $date);
                     }
 
                     $availability->increment('booked_slots', $requiredSlots);

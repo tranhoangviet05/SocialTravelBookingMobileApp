@@ -1214,15 +1214,17 @@ const MyServices = () => {
                                                     </button>
                                                 )}
 
-                                                {/* Trạng thái khả dụng (Số chỗ/phòng) */}
-                                                <button
-                                                    onClick={() => setAvailabilityService(service)}
-                                                    title="Trạng thái khả dụng"
-                                                    className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl flex flex-col items-center gap-0.5"
-                                                >
-                                                    <CalendarDays size={15} />
-                                                    <span className="text-[9px] font-bold leading-none">Trống</span>
-                                                </button>
+                                                {/* Trạng thái khả dụng (Số chỗ/phòng) - Chỉ cho Tour */}
+                                                {service.type === 'tour' && (
+                                                    <button
+                                                        onClick={() => setAvailabilityService(service)}
+                                                        title="Trạng thái khả dụng"
+                                                        className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl flex flex-col items-center gap-0.5"
+                                                    >
+                                                        <CalendarDays size={15} />
+                                                        <span className="text-[9px] font-bold leading-none">Trống</span>
+                                                    </button>
+                                                )}
 
                                                 <button onClick={() => handleOpenEdit(service)} className="p-2 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl flex flex-col items-center gap-0.5">
                                                     <Edit3 size={15} />

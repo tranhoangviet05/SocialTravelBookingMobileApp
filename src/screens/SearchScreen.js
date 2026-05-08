@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView,
+  StyleSheet, View, ScrollView,
   TouchableOpacity, Image, FlatList,
   ActivityIndicator, Dimensions, RefreshControl,
-  Animated, TextInput, Pressable, Platform
+  Animated, Pressable, Platform
 } from 'react-native';
+import AppText from '../components/common/AppText';
+import AppTextInput from '../components/common/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronLeft, Search as SearchIcon, MapPin,
@@ -27,7 +29,7 @@ const SearchScreen = ({ route, navigation }) => {
   const [results, setResults] = useState([]);
   const [activeType, setActiveType] = useState('all');
   const [activeCategory, setActiveCategory] = useState(initialParams?.category || 'all');
-  
+
   // Filter States
   const [filters, setFilters] = useState({
     priceMin: '',
@@ -45,7 +47,7 @@ const SearchScreen = ({ route, navigation }) => {
     guests: { rooms: 1, adults: 2, children: 0 }
   });
   const [localLocation, setLocalLocation] = useState(currentParams?.location || '');
-  
+
   // Animation Refs
   const modalAnim = useRef(new Animated.Value(0)).current;
   const filterAnim = useRef(new Animated.Value(0)).current;
@@ -158,27 +160,31 @@ const SearchScreen = ({ route, navigation }) => {
   };
 
   const renderServiceItem = ({ item }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.serviceCard}
       onPress={() => navigation.navigate('ServiceDetail', { service: item })}
     >
       <Image source={{ uri: getImageUrl(item.media) }} style={styles.serviceImage} />
       <View style={styles.serviceInfo}>
         <View style={styles.typeRow}>
-          <Text style={styles.serviceType}>{item.type?.toUpperCase()}</Text>
+          <AppText style={styles.serviceType}>{item.type?.toUpperCase()}</AppText>
           <View style={styles.ratingRow}>
             <Star color="#FFD700" size={12} fill="#FFD700" />
-            <Text style={styles.ratingText}>{item.rating_avg || '5.0'}</Text>
+            <AppText style={styles.ratingText}>{item.rating_avg || '5.0'}</AppText>
           </View>
         </View>
-        <Text style={styles.serviceName} numberOfLines={2}>{item.name}</Text>
+        <AppText style={styles.serviceName} numberOfLines={2}>{item.name}</AppText>
         <View style={styles.locationRow}>
           <MapPin color={Colors.textSecondary} size={12} />
-          <Text style={styles.locationText} numberOfLines={1}>{item.address || item.location?.name || 'Việt Nam'}</Text>
+          <AppText style={styles.locationText} numberOfLines={1}>{item.address || item.location?.name || 'Việt Nam'}</AppText>
         </View>
         <View style={styles.priceRow}>
-          <Text style={styles.priceValue}>{Number(item.base_price).toLocaleString()}đ</Text>
-          <Text style={styles.priceUnit}>/{item.price_unit === 'per_person' ? 'người' : 'đêm'}</Text>
+          <AppText style={styles.priceValue}>
+            {Number(item.base_price).toLocaleString()}đ
+            <AppText style={[styles.priceUnit, { color: Colors.primary, fontWeight: '700' }]}>
+              {item.type?.toLowerCase() === 'tour' ? ' /người' : (item.type?.toLowerCase() === 'vehicle' ? ' /ngày' : ' /đêm')}
+            </AppText>
+          </AppText>
         </View>
       </View>
     </TouchableOpacity>
@@ -193,20 +199,20 @@ const SearchScreen = ({ route, navigation }) => {
             <ChevronLeft color="#000" size={24} />
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.searchSummary}
             onPress={() => toggleSearchModal(true)}
           >
-            <Text style={styles.summaryLocation}>{currentParams?.location || 'Mọi nơi'}</Text>
-            <Text style={styles.summarySub}>
-              {activeCategory === 'activity' 
+            <AppText style={styles.summaryLocation}>{currentParams?.location || 'Mọi nơi'}</AppText>
+            <AppText style={styles.summarySub}>
+              {activeCategory === 'activity'
                 ? formatDate(currentParams?.startDate)
                 : `${formatDate(currentParams?.startDate)} - ${formatDate(currentParams?.endDate)}`}
               {activeCategory === 'stay' && ` • ${(currentParams?.guests?.adults || 0) + (currentParams?.guests?.children || 0)} khách`}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.filterButton}
             onPress={() => toggleFilterModal(true)}
           >
@@ -233,9 +239,9 @@ const SearchScreen = ({ route, navigation }) => {
           ) : results.length === 0 ? (
             <View style={styles.emptyState}>
               <SearchIcon color={Colors.textSecondary} size={64} opacity={0.2} />
-              <Text style={styles.emptyText}>Không tìm thấy kết quả phù hợp</Text>
+              <AppText style={styles.emptyText}>Không tìm thấy kết quả phù hợp</AppText>
               <TouchableOpacity style={styles.resetButton} onPress={() => toggleSearchModal(true)}>
-                <Text style={styles.resetButtonText}>Thay đổi tìm kiếm</Text>
+                <AppText style={styles.resetButtonText}>Thay đổi tìm kiếm</AppText>
               </TouchableOpacity>
             </View>
           ) : (
@@ -256,13 +262,13 @@ const SearchScreen = ({ route, navigation }) => {
       {/* Search Modal Overlay */}
       {showSearchModal && (
         <View style={StyleSheet.absoluteFill}>
-          <Pressable 
-            style={styles.backdrop} 
+          <Pressable
+            style={styles.backdrop}
             onPress={() => toggleSearchModal(false)}
           >
             <Animated.View style={[styles.backdropFill, { opacity: modalAnim }]} />
           </Pressable>
-          
+
           <Animated.View style={[
             styles.searchModal,
             {
@@ -277,7 +283,7 @@ const SearchScreen = ({ route, navigation }) => {
             <SafeAreaView edges={['top']}>
               <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Chỉnh sửa tìm kiếm</Text>
+                  <AppText style={styles.modalTitle}>Chỉnh sửa tìm kiếm</AppText>
                   <TouchableOpacity onPress={() => toggleSearchModal(false)}>
                     <X color="#000" size={24} />
                   </TouchableOpacity>
@@ -286,7 +292,7 @@ const SearchScreen = ({ route, navigation }) => {
                 <View style={styles.modalForm}>
                   <View style={styles.inputGroup}>
                     <MapPin color={Colors.primary} size={20} />
-                    <TextInput 
+                    <AppTextInput
                       style={styles.modalInput}
                       value={localLocation}
                       onChangeText={setLocalLocation}
@@ -294,35 +300,35 @@ const SearchScreen = ({ route, navigation }) => {
                     />
                   </View>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.inputGroup}
                     onPress={() => datePickerRef.current?.open()}
                   >
                     <Calendar color={Colors.primary} size={20} />
-                    <Text style={styles.modalInput}>
-                      {activeCategory === 'activity' 
+                    <AppText style={styles.modalInput}>
+                      {activeCategory === 'activity'
                         ? formatDate(currentParams?.startDate)
                         : `${formatDate(currentParams?.startDate)} - ${formatDate(currentParams?.endDate)}`}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
 
                   {activeCategory === 'stay' && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.inputGroup}
                       onPress={() => guestPickerRef.current?.open()}
                     >
                       <Users color={Colors.primary} size={20} />
-                      <Text style={styles.modalInput}>
+                      <AppText style={styles.modalInput}>
                         {currentParams?.guests?.rooms || 1} phòng, {(currentParams?.guests?.adults || 0) + (currentParams?.guests?.children || 0)} khách
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   )}
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.applyButton}
                     onPress={handleUpdateSearch}
                   >
-                    <Text style={styles.applyButtonText}>Cập nhật tìm kiếm</Text>
+                    <AppText style={styles.applyButtonText}>Cập nhật tìm kiếm</AppText>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -334,13 +340,13 @@ const SearchScreen = ({ route, navigation }) => {
       {/* Filter Modal Overlay */}
       {showFilterModal && (
         <View style={StyleSheet.absoluteFill}>
-          <Pressable 
-            style={styles.backdrop} 
+          <Pressable
+            style={styles.backdrop}
             onPress={() => toggleFilterModal(false)}
           >
             <Animated.View style={[styles.backdropFill, { opacity: filterAnim }]} />
           </Pressable>
-          
+
           <Animated.View style={[
             styles.filterModal,
             {
@@ -354,7 +360,7 @@ const SearchScreen = ({ route, navigation }) => {
           ]}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Bộ lọc tìm kiếm</Text>
+                <AppText style={styles.modalTitle}>Bộ lọc tìm kiếm</AppText>
                 <TouchableOpacity onPress={() => toggleFilterModal(false)}>
                   <X color="#000" size={24} />
                 </TouchableOpacity>
@@ -362,7 +368,7 @@ const SearchScreen = ({ route, navigation }) => {
 
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: height * 0.7 }}>
                 {/* Sắp xếp */}
-                <Text style={styles.filterLabel}>Sắp xếp theo</Text>
+                <AppText style={styles.filterLabel}>Sắp xếp theo</AppText>
                 <View style={styles.filterOptions}>
                   {[
                     { id: 'newest', label: 'Mới nhất' },
@@ -370,18 +376,18 @@ const SearchScreen = ({ route, navigation }) => {
                     { id: 'price_desc', label: 'Giá cao nhất' },
                     { id: 'rating', label: 'Xếp hạng cao nhất' }
                   ].map(opt => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       key={opt.id}
                       style={[styles.optionChip, filters.sortBy === opt.id && styles.activeOptionChip]}
                       onPress={() => setFilters({ ...filters, sortBy: opt.id })}
                     >
-                      <Text style={[styles.optionText, filters.sortBy === opt.id && styles.activeOptionText]}>{opt.label}</Text>
+                      <AppText style={[styles.optionText, filters.sortBy === opt.id && styles.activeOptionText]}>{opt.label}</AppText>
                     </TouchableOpacity>
                   ))}
                 </View>
 
                 {/* Loại hình */}
-                <Text style={styles.filterLabel}>Loại hình dịch vụ</Text>
+                <AppText style={styles.filterLabel}>Loại hình dịch vụ</AppText>
                 <View style={styles.filterOptions}>
                   {[
                     { id: 'hotel', label: 'Khách sạn' },
@@ -391,26 +397,26 @@ const SearchScreen = ({ route, navigation }) => {
                   ].map(type => {
                     const isSelected = filters.selectedTypes.includes(type.id);
                     return (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         key={type.id}
                         style={[styles.optionChip, isSelected && styles.activeOptionChip]}
                         onPress={() => {
-                          const newTypes = isSelected 
+                          const newTypes = isSelected
                             ? filters.selectedTypes.filter(t => t !== type.id)
                             : [...filters.selectedTypes, type.id];
                           setFilters({ ...filters, selectedTypes: newTypes });
                         }}
                       >
-                        <Text style={[styles.optionText, isSelected && styles.activeOptionText]}>{type.label}</Text>
+                        <AppText style={[styles.optionText, isSelected && styles.activeOptionText]}>{type.label}</AppText>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
 
                 {/* Khoảng giá */}
-                <Text style={styles.filterLabel}>Khoảng giá (VNĐ)</Text>
+                <AppText style={styles.filterLabel}>Khoảng giá (VNĐ)</AppText>
                 <View style={styles.priceInputs}>
-                  <TextInput 
+                  <AppTextInput
                     style={styles.priceInput}
                     placeholder="Tối thiểu"
                     keyboardType="numeric"
@@ -418,7 +424,7 @@ const SearchScreen = ({ route, navigation }) => {
                     onChangeText={text => setFilters({ ...filters, priceMin: text })}
                   />
                   <View style={styles.priceDash} />
-                  <TextInput 
+                  <AppTextInput
                     style={styles.priceInput}
                     placeholder="Tối đa"
                     keyboardType="numeric"
@@ -431,20 +437,20 @@ const SearchScreen = ({ route, navigation }) => {
               </ScrollView>
 
               <View style={styles.filterActions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.clearButton}
                   onPress={() => setFilters(prev => ({ priceMin: '', priceMax: '', sortBy: 'newest', selectedTypes: [], serviceType: prev.serviceType }))}
                 >
-                  <Text style={styles.clearButtonText}>Thiết lập lại</Text>
+                  <AppText style={styles.clearButtonText}>Thiết lập lại</AppText>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.applyButton, { flex: 2, marginTop: 0 }]}
                   onPress={() => {
                     toggleFilterModal(false);
                     fetchResults();
                   }}
                 >
-                  <Text style={styles.applyButtonText}>Áp dụng bộ lọc</Text>
+                  <AppText style={styles.applyButtonText}>Áp dụng bộ lọc</AppText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -453,19 +459,19 @@ const SearchScreen = ({ route, navigation }) => {
       )}
 
       {/* Pickers */}
-      <CustomDatePicker 
+      <CustomDatePicker
         bottomSheetRef={datePickerRef}
         onSelectRange={(range) => setCurrentParams({ ...currentParams, ...range })}
       />
-      <GuestPicker 
+      <GuestPicker
         bottomSheetRef={guestPickerRef}
         guests={currentParams.guests}
         setGuests={(newGuestsOrCallback) => {
           // Xử lý cả trường hợp truyền hàm callback từ GuestPicker (prev => ...)
           if (typeof newGuestsOrCallback === 'function') {
-             setCurrentParams(prev => ({ ...prev, guests: newGuestsOrCallback(prev.guests) }));
+            setCurrentParams(prev => ({ ...prev, guests: newGuestsOrCallback(prev.guests) }));
           } else {
-             setCurrentParams({ ...currentParams, guests: newGuestsOrCallback });
+            setCurrentParams({ ...currentParams, guests: newGuestsOrCallback });
           }
         }}
       />
@@ -576,10 +582,10 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 17, fontWeight: 'bold', color: Colors.text, marginBottom: 10, lineHeight: 24 },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   locationText: { fontSize: 13, color: Colors.textSecondary },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   priceValue: { fontSize: 20, fontWeight: 'bold', color: Colors.primary },
-  priceUnit: { fontSize: 13, color: Colors.textSecondary },
-  
+  priceUnit: { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
+
   // Modal Styles
   backdrop: { ...StyleSheet.absoluteFillObject, zIndex: 100 },
   backdropFill: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
@@ -715,7 +721,7 @@ const styles = StyleSheet.create({
     elevation: 8
   },
   applyButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  
+
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyText: { marginTop: 20, fontSize: 16, color: Colors.textSecondary, textAlign: 'center' },
   resetButton: { marginTop: 20, paddingHorizontal: 25, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 15 },

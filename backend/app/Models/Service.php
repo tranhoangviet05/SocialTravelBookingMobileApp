@@ -22,11 +22,39 @@ class Service extends Model
             'amenities' => 'array',
             'includes' => 'array',
             'excludes' => 'array',
-            'tags' => 'array', // Dùng cho TEXT[] trong Postgres
+            // 'tags' được xử lý qua Accessor và Mutator bên dưới
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Accessor: Chuyển đổi chuỗi text[] của Postgres thành mảng PHP khi đọc
+     */
+    public function getTagsAttribute($value)
+    {
+        if (is_array($value)) return array_values($value);
+        if (!$value || $value === '{}') return [];
+        
+        $tags = array_filter(explode(',', trim($value, '{}')));
+        return array_values(array_map(function($t) {
+            return trim($t, '"\' ');
+        }, $tags));
+    }
+
+    /**
+     * Mutator: Chuyển đổi mảng PHP thành chuỗi text[] của Postgres khi lưu
+     */
+    public function setTagsAttribute($value)
+    {
+        if (is_array($value)) {
+            // Thêm dấu ngoặc kép để tránh lỗi nếu tag có chứa dấu phẩy hoặc khoảng trắng
+            $formatted = array_map(fn($t) => '"' . addslashes(trim($t, '"\'')) . '"', $value);
+            $this->attributes['tags'] = '{' . implode(',', $formatted) . '}';
+        } else {
+            $this->attributes['tags'] = '{' . trim($value, '{}') . '}';
+        }
     }
 
     // --- QUAN HỆ ---

@@ -1,9 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, ScrollView,
-  TouchableOpacity, Image, Dimensions,
-  TextInput, ImageBackground, ActivityIndicator, Alert
+  StyleSheet,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  ImageBackground,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
+import AppText from '../components/common/AppText';
+import AppTextInput from '../components/common/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -147,7 +155,7 @@ const HomeScreen = ({ navigation }) => {
             {/* Địa điểm - Luôn hiển thị */}
             <TouchableOpacity style={styles.searchInputRow}>
               <MapPin color={Colors.primary} size={20} />
-              <TextInput
+              <AppTextInput
                 style={styles.textInput}
                 value={location}
                 onChangeText={setLocation}
@@ -162,13 +170,13 @@ const HomeScreen = ({ navigation }) => {
               onPress={() => datePickerRef.current?.open()}
             >
               <CalendarIcon color={Colors.primary} size={20} />
-              <Text style={[styles.textInput, !selectedRange.startDate && { color: Colors.textSecondary }]}>
+              <AppText style={[styles.textInput, !selectedRange.startDate && { color: Colors.textSecondary }]}>
                 {selectedRange.startDate
                   ? (activeCategory === 'activity' 
                       ? formatDate(selectedRange.startDate) 
                       : `${formatDate(selectedRange.startDate)} - ${formatDate(selectedRange.endDate)}`)
                   : (activeCategory === 'activity' ? 'Chọn ngày đi' : 'Nhập ngày đi - về')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             {/* Số khách - Chỉ hiện ở tab Lưu trú */}
@@ -178,9 +186,9 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => guestPickerRef.current?.open()}
               >
                 <Users color={Colors.primary} size={20} />
-                <Text style={styles.textInput}>
+                <AppText style={styles.textInput}>
                   {guests.rooms} phòng, {guests.adults} người lớn, {guests.children} trẻ em
-                </Text>
+                </AppText>
               </TouchableOpacity>
             )}
 
@@ -188,14 +196,14 @@ const HomeScreen = ({ navigation }) => {
               style={styles.searchButton}
               onPress={handleSearch}
             >
-              <Text style={styles.searchButtonText}>Tìm kiếm</Text>
+              <AppText style={styles.searchButtonAppText}>Tìm kiếm</AppText>
             </TouchableOpacity>
           </View>
         </LinearGradient>
 
         {/* 1. Trending Destinations */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Điểm đến đang thịnh hành</Text>
+          <AppText style={styles.sectionTitle}>Điểm đến đang thịnh hành</AppText>
         </View>
         <ScrollView
           horizontal
@@ -223,10 +231,10 @@ const HomeScreen = ({ navigation }) => {
                     colors={['transparent', 'rgba(0,0,0,0.8)']}
                     style={styles.featuredOverlay}
                   >
-                    <Text style={styles.featuredLocation}>{dest.name?.toUpperCase()}</Text>
+                    <AppText style={styles.featuredLocation}>{dest.name?.toUpperCase()}</AppText>
                     <View style={styles.featuredTag}>
                       <MapPin color="#fff" size={14} />
-                      <Text style={styles.featuredTagText}>{dest.parent?.name || 'Việt Nam'}</Text>
+                      <AppText style={styles.featuredTagAppText}>{dest.parent?.name || 'Việt Nam'}</AppText>
                     </View>
                   </LinearGradient>
                 </ImageBackground>
@@ -237,8 +245,8 @@ const HomeScreen = ({ navigation }) => {
 
         {/* 2. Offers Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Đi nhiều hơn, trả ít hơn</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>Xem tất cả</Text></TouchableOpacity>
+          <AppText style={styles.sectionTitle}>Đi nhiều hơn, trả ít hơn</AppText>
+          <TouchableOpacity><AppText style={styles.seeAll}>Xem tất cả</AppText></TouchableOpacity>
         </View>
         <ScrollView
           horizontal
@@ -264,12 +272,12 @@ const HomeScreen = ({ navigation }) => {
               >
                 <View style={styles.offerContent}>
                   <Gift color="#fff" size={24} style={{ marginBottom: 8 }} />
-                  <Text style={styles.offerTitle} numberOfLines={1}>{item.code}</Text>
-                  <Text style={styles.offerSubtitle} numberOfLines={2}>
+                  <AppText style={styles.offerTitle} numberOfLines={1}>{item.code}</AppText>
+                  <AppText style={styles.offerSubtitle} numberOfLines={2}>
                     {item.type === 'percent' ? `Giảm ${item.discount_value}%` : `Giảm ${item.discount_value}đ`}
-                  </Text>
+                  </AppText>
                   <View style={styles.promoBadge}>
-                    <Text style={styles.promoText}>MIN: {item.min_order_amount?.toLocaleString()}đ</Text>
+                    <AppText style={styles.promoAppText}>MIN: {item.min_order_amount?.toLocaleString()}đ</AppText>
                   </View>
                 </View>
               </LinearGradient>
@@ -279,7 +287,7 @@ const HomeScreen = ({ navigation }) => {
 
         {/* 3. Why Choose Us Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Vì sao chọn Social Travel</Text>
+          <AppText style={styles.sectionTitle}>Vì sao chọn Social Travel</AppText>
         </View>
         <ScrollView
           horizontal
@@ -291,8 +299,8 @@ const HomeScreen = ({ navigation }) => {
               <View style={[styles.whyIconContainer, { backgroundColor: item.color + '15' }]}>
                 <item.Icon color={item.color} size={24} />
               </View>
-              <Text style={styles.whyTitle}>{item.title}</Text>
-              <Text style={styles.whyDesc}>{item.desc}</Text>
+              <AppText style={styles.whyTitle}>{item.title}</AppText>
+              <AppText style={styles.whyDesc}>{item.desc}</AppText>
             </View>
           ))}
         </ScrollView>
@@ -307,14 +315,14 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.aiContent}>
             <View style={styles.aiHeader}>
               <Lightbulb color="#fff" size={28} />
-              <Text style={styles.aiTitle}>Trợ giúp từ Social Travel Booking</Text>
+              <AppText style={styles.aiTitle}>Trợ giúp từ Social Travel Booking</AppText>
             </View>
-            <Text style={styles.aiDesc}>
+            <AppText style={styles.aiDesc}>
               Để Social Travel Booking giúp bạn xây dựng một hành trình du lịch hoàn hảo dựa trên sở thích cá nhân chỉ trong vài giây.
-            </Text>
+            </AppText>
             <TouchableOpacity style={styles.aiButton}>
               <Sparkles color="#4F46E5" size={18} />
-              <Text style={styles.aiButtonText}>Xây dựng hành trình cho tôi</Text>
+              <AppText style={styles.aiButtonAppText}>Xây dựng hành trình cho tôi</AppText>
             </TouchableOpacity>
           </View>
           <View style={styles.aiIconFloating}>
@@ -328,12 +336,12 @@ const HomeScreen = ({ navigation }) => {
             <Sparkles color={Colors.primary} size={24} />
           </View>
           <View style={styles.noticeContent}>
-            <Text style={styles.noticeTitle}>Quản lý gợi ý</Text>
-            <Text style={styles.noticeDesc}>
+            <AppText style={styles.noticeTitle}>Quản lý gợi ý</AppText>
+            <AppText style={styles.noticeDesc}>
               Chúng tôi cung cấp gợi ý dựa trên hoạt động của bạn để mang lại trải nghiệm tốt nhất.
-            </Text>
+            </AppText>
             <TouchableOpacity style={styles.noticeLink}>
-              <Text style={styles.noticeLinkText}>Tìm hiểu thêm</Text>
+              <AppText style={styles.noticeLinkAppText}>Tìm hiểu thêm</AppText>
               <ChevronRight color={Colors.primary} size={16} />
             </TouchableOpacity>
           </View>
@@ -396,7 +404,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 16,
   },
-  searchButtonText: {
+  searchButtonAppText: {
     color: Colors.white,
     fontSize: 16,
     fontWeight: 'bold',
@@ -442,7 +450,7 @@ const styles = StyleSheet.create({
   },
   featuredLocation: { color: '#fff', fontSize: 24, fontWeight: 'bold', letterSpacing: 1 },
   featuredTag: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  featuredTagText: { color: '#fff', fontSize: 14, marginLeft: 4, opacity: 0.9 },
+  featuredTagAppText: { color: '#fff', fontSize: 14, marginLeft: 4, opacity: 0.9 },
   offerCard: {
     width: width * 0.6,
     height: 150,
@@ -460,7 +468,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignSelf: 'flex-start',
   },
-  promoText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  promoAppText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   whyCard: {
     width: width * 0.45,
     backgroundColor: '#fff',
@@ -501,7 +509,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 20,
   },
-  aiButtonText: { color: '#4F46E5', fontWeight: 'bold', marginLeft: 8, fontSize: 14 },
+  aiButtonAppText: { color: '#4F46E5', fontWeight: 'bold', marginLeft: 8, fontSize: 14 },
   aiIconFloating: { position: 'absolute', right: -20, bottom: -20 },
   noticeCard: {
     margin: Typography.spacing.md,
