@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   filterChipText: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
   activeFilterChipText: { color: '#fff' },
   resultsContainer: { flex: 1 },
-  listContent: { paddingHorizontal: 20, paddingBottom: 30, paddingTop: 10 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 110, paddingTop: 10 },
   serviceCard: {
     backgroundColor: '#fff',
     borderRadius: 24,

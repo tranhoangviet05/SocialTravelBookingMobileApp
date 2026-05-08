@@ -20,10 +20,7 @@ class User extends Authenticatable
     /**
      * Các trường cần ẩn khi chuyển sang JSON
      */
-    protected $hidden = [
-        'password_hash',
-        'remember_token',
-    ];
+    protected $hidden = [];
 
     /**
      * Các thuộc tính cần ép kiểu
@@ -47,15 +44,12 @@ class User extends Authenticatable
         return $this->avatar_url;
     }
 
-    /**
-     * Khai báo cột mật khẩu cho Laravel Auth (vì tên cũ là 'password_hash')
-     */
-    public function getAuthPasswordName()
-    {
-        return 'password_hash';
-    }
-
     // --- QUAN HỆ (RELATIONSHIPS) ---
+
+    public function touristProfile()
+    {
+        return $this->hasOne(TouristProfile::class);
+    }
 
     public function providerProfile()
     {

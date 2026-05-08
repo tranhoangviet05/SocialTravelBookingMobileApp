@@ -30,6 +30,8 @@ const MainTabNavigator = () => {
 };
 
 import WishlistScreen from '../screens/WishlistScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
 
 const AppNavigator = () => {
   return (
@@ -42,6 +44,8 @@ const AppNavigator = () => {
       <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} />
       <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen name="Wishlist" component={WishlistScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Checkout" component={CheckoutScreen} />
     </Stack.Navigator>
   );
 };

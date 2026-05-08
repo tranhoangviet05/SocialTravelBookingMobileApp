@@ -84,7 +84,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleEditProfile = () => {
-    Alert.alert('Sắp ra mắt', 'Tính năng chỉnh sửa hồ sơ đang được phát triển.');
+    navigation.navigate('EditProfile');
   };
 
   return (
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bodyContent: {
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   sectionHeader: {
     fontSize: 12,

@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
   
-  listContainer: { padding: 15 },
+  listContainer: { padding: 15, paddingBottom: 110 },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',

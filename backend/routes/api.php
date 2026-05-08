@@ -97,13 +97,13 @@ Route::middleware('firebase.auth')->group(function () {
     // 3. Lấy thông tin user hiện tại
     Route::get('/user/get/profile', function (\Illuminate\Http\Request $request) {
         $firebaseUid = $request->attributes->get('firebaseUid');
-        $user = \App\Models\User::with('socialProfile')->where('firebase_uid', $firebaseUid)->first();
+        $user = \App\Models\User::with(['socialProfile', 'touristProfile'])->where('firebase_uid', $firebaseUid)->first();
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
-        // Đảm bảo social_active luôn trả về boolean thật (tránh Postgres trả về 0/1)
+        // Đảm bảo social_active luôn trả về boolean thật
         $userData = $user->toArray();
         $userData['social_active'] = (bool) $user->social_active;
 
@@ -159,7 +159,10 @@ Route::middleware('firebase.auth')->group(function () {
         Route::post('/reviews', [\App\Http\Controllers\General\ReviewController::class, 'store']);
         Route::post('/services/{id}/feedbacks', [ServiceFeedbackController::class, 'store']);
 
-        // Payment routes
+        // Tourist profile routes
+        Route::get('/user/tourist-profile', [\App\Http\Controllers\General\TouristProfileController::class, 'show']);
+        Route::put('/user/tourist-profile', [\App\Http\Controllers\General\TouristProfileController::class, 'update']);
+
         Route::post('/payment/initiate', [\App\Http\Controllers\General\PaymentController::class, 'initiate']);
         Route::get('/payment/status/{bookingId}', [\App\Http\Controllers\General\PaymentController::class, 'checkStatus']);
         Route::get('/wallet/balance', [\App\Http\Controllers\General\PaymentController::class, 'walletBalance']);

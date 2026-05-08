@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react'; 
 import {
   StyleSheet, View, ScrollView,
   TouchableOpacity, Image, Linking, ActivityIndicator,
@@ -22,6 +22,7 @@ import { BASE_URL } from '../api/apiClient';
 import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/common/Skeleton';
 import CustomDatePicker from '../components/home/CustomDatePicker';
+import { profileApi } from '../api/profileApi';
 
 const { width } = Dimensions.get('window');
 
@@ -42,8 +43,10 @@ const ServiceDetailScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // overview, itinerary, amenities, reviews
   const [selectedRoomType, setSelectedRoomType] = useState(null);
+  const [touristProfile, setTouristProfile] = useState(null);
 
-  const bottomSheetRef = useRef(null);
+  const datePickerRef = useRef(null);
+  const roomDetailSheetRef = useRef(null);
 
   // Favorite State
   const [isFavorite, setIsFavorite] = useState(false);
@@ -53,6 +56,7 @@ const ServiceDetailScreen = ({ route, navigation }) => {
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewContent, setReviewContent] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
+  const [bookingLoading, setBookingLoading] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
 
   // Xem thêm/thu gọn mô tả
@@ -68,7 +72,6 @@ const ServiceDetailScreen = ({ route, navigation }) => {
   const DESC_LIMIT = 180; // ký tự
 
   // Room Detail Sheet (bottom sheet)
-  const roomDetailSheetRef = useRef(null);
   const [modalRoom, setModalRoom] = useState(null);
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
@@ -86,11 +89,21 @@ const ServiceDetailScreen = ({ route, navigation }) => {
     children: 0,
   });
 
-  const datePickerRef = useRef(null);
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    const fetchProfile = async () => {
+      if (user && token) {
+        try {
+          const res = await profileApi.getProfile();
+          if (res.success) setTouristProfile(res.data);
+        } catch (e) {
+          console.error('Lỗi lấy profile:', e);
+        }
+      }
+    };
+    fetchProfile();
+
     const fetchDetail = async () => {
       try {
         const idOrSlug = initialService?.slug || initialService?.id;
@@ -296,11 +309,7 @@ const ServiceDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleBooking = () => {
-    bottomSheetRef.current?.close();
-    // TODO: Mở trang checkout với data thực tế
-    alert('Tính năng Checkout đang được cập nhật!');
-  };
+
 
   const isTour = serviceData.type?.toLowerCase() === 'tour';
   const isHotel = serviceData.type?.toLowerCase() === 'hotel';
@@ -357,9 +366,61 @@ const ServiceDetailScreen = ({ route, navigation }) => {
     };
   };
 
+  const onPressBookNow = async () => {
+    if (!user) {
+      Alert.alert('Chưa đăng nhập', 'Vui lòng đăng nhập để thực hiện đặt chỗ.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+      ]);
+      return;
+    }
+
+    setBookingLoading(true);
+    // Lấy thông tin profile mới nhất để kiểm tra
+    let currentProfile = touristProfile;
+    try {
+      const res = await profileApi.getProfile();
+      if (res.success) {
+        currentProfile = res.data;
+        setTouristProfile(currentProfile); // Cập nhật lại state
+      }
+    } catch (e) {
+      console.error('Lỗi khi lấy profile mới nhất:', e);
+    }
+    setBookingLoading(false);
+
+    if (!profileApi.checkCompletion(currentProfile)) {
+      Alert.alert(
+        'Thông tin chưa đầy đủ',
+        'Vui lòng cập nhật đầy đủ thông tin khách du lịch (Họ tên, SĐT, Giới tính, Ngày sinh, Quốc tịch) trước khi đặt chỗ.',
+        [
+          { text: 'Để sau', style: 'cancel' },
+          { text: 'Cập nhật ngay', onPress: () => navigation.navigate('EditProfile') }
+        ]
+      );
+      return;
+    }
+
+    // Chuyển thẳng sang Checkout với dữ liệu mặc định (đã serializable)
+    const checkoutData = {
+      service: serviceData,
+      bookingData: {
+        startDate: new Date().toISOString(),
+        endDate: isHotel || isHomestay ? new Date(Date.now() + 86400000).toISOString() : null,
+        adults: 1,
+        children: 0,
+        roomType: selectedRoomType,
+        nights: 1
+      }
+    };
+
+    navigation.navigate('Checkout', checkoutData);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+
         {/* Header Image Carousel */}
         <View style={styles.imageContainer}>
           <ScrollView
@@ -764,71 +825,19 @@ const ServiceDetailScreen = ({ route, navigation }) => {
             </AppText>
           </View>
         </View>
-        <TouchableOpacity style={styles.bookButton} onPress={() => bottomSheetRef.current?.open()}>
-          <AppText style={styles.bookButtonAppText}>Đặt ngay</AppText>
+        <TouchableOpacity 
+          style={[styles.bookButton, bookingLoading && { opacity: 0.7 }]} 
+          onPress={onPressBookNow}
+          disabled={bookingLoading}
+        >
+          {bookingLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <AppText style={styles.bookButtonAppText}>Đặt ngay</AppText>
+          )}
         </TouchableOpacity>
       </View>
 
-      {/* Booking Bottom Sheet */}
-      <RBSheet
-        ref={bottomSheetRef}
-        closeOnDragDown={true}
-        closeOnPressMask={true}
-        height={450}
-        customStyles={{
-          wrapper: { backgroundColor: "rgba(0,0,0,0.5)" },
-          draggableIcon: { backgroundColor: "#ccc" },
-          container: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingBottom: 20 }
-        }}
-      >
-        <AppText style={styles.sheetTitle}>Tùy chọn đặt dịch vụ</AppText>
-
-        <View style={styles.sheetRow}>
-          <AppText style={styles.sheetLabel}>{isTour ? 'Ngày khởi hành' : 'Ngày nhận phòng'}</AppText>
-          <TouchableOpacity
-            style={styles.sheetInputBox}
-            onPress={() => datePickerRef.current?.open()}
-          >
-            <Calendar size={18} color={Colors.primary} style={{ marginRight: 8 }} />
-            <AppText style={{ fontWeight: 'bold', color: Colors.text }}>
-              {new Date(bookingForm.date).toLocaleDateString('vi-VN')}
-            </AppText>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.sheetGuestsRow}>
-          <View style={styles.sheetGuestItem}>
-            <AppText style={styles.sheetLabel}>Người lớn</AppText>
-            <View style={styles.guestCounter}>
-              <TouchableOpacity onPress={() => setBookingForm(p => ({ ...p, adults: Math.max(1, p.adults - 1) }))} style={styles.counterBtn}><AppText style={styles.counterBtnAppText}>-</AppText></TouchableOpacity>
-              <AppText style={styles.counterAppText}>{bookingForm.adults}</AppText>
-              <TouchableOpacity onPress={() => setBookingForm(p => ({ ...p, adults: p.adults + 1 }))} style={styles.counterBtn}><AppText style={styles.counterBtnAppText}>+</AppText></TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.sheetGuestItem}>
-            <AppText style={styles.sheetLabel}>Trẻ em</AppText>
-            <View style={styles.guestCounter}>
-              <TouchableOpacity onPress={() => setBookingForm(p => ({ ...p, children: Math.max(0, p.children - 1) }))} style={styles.counterBtn}><AppText style={styles.counterBtnAppText}>-</AppText></TouchableOpacity>
-              <AppText style={styles.counterAppText}>{bookingForm.children}</AppText>
-              <TouchableOpacity onPress={() => setBookingForm(p => ({ ...p, children: p.children + 1 }))} style={styles.counterBtn}><AppText style={styles.counterBtnAppText}>+</AppText></TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.sheetSummary}>
-          <View style={styles.summaryRow}>
-            <AppText style={styles.summaryLabel}>Tổng tạm tính</AppText>
-            <AppText style={styles.summaryPrice}>
-              {Number(price * bookingForm.adults + price * 0.5 * bookingForm.children).toLocaleString()}đ
-            </AppText>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.confirmBookButton} onPress={handleBooking}>
-          <AppText style={styles.confirmBookAppText}>Xác nhận & Đặt ngay</AppText>
-        </TouchableOpacity>
-      </RBSheet>
       {/* Room Detail Bottom Sheet */}
       <RBSheet
         ref={roomDetailSheetRef}
@@ -1220,8 +1229,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6, borderRadius: 10,
     borderWidth: 1, borderColor: '#E2E8F0',
   },
-  activityChipAppText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
-
   activityChipAppText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
 
   // ── TAGS STYLES ──
