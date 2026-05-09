@@ -244,7 +244,7 @@ class BookingController extends Controller
     public function cancel(Request $request, $id)
     {
         $userId = $request->user->id;
-        $booking = Booking::where('id', $id)->where('user_id', $userId)->firstOrFail();
+        $booking = Booking::with('service')->where('id', $id)->where('user_id', $userId)->firstOrFail();
 
         if ($booking->status !== 'pending') {
             return response()->json([
@@ -253,16 +253,47 @@ class BookingController extends Controller
             ], 400);
         }
 
-        $booking->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'cancel_reason' => 'Người dùng yêu cầu hủy'
-        ]);
+        try {
+            DB::transaction(function () use ($booking, $request) {
+                // 1. Hoàn trả lại slots/inventory
+                if (in_array($booking->service->type, ['hotel', 'homestay'])) {
+                    if ($booking->room_type_id) {
+                        $roomType = \App\Models\HotelRoomType::find($booking->room_type_id);
+                        if ($roomType) {
+                            $roomType->increment('inventory');
+                        }
+                    }
+                } else {
+                    $date = $booking->check_in_date->toDateString();
+                    $requiredSlots = $booking->num_adults + $booking->num_children;
+                    
+                    $availability = \App\Models\ServiceAvailability::where('service_id', $booking->service_id)
+                        ->where('available_date', $date)
+                        ->first();
+                    
+                    if ($availability) {
+                        $availability->decrement('booked_slots', $requiredSlots);
+                    }
+                }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã hủy đơn đặt chỗ thành công.'
-        ]);
+                // 2. Cập nhật trạng thái booking
+                $booking->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'cancel_reason' => $request->cancel_reason ?? 'Người dùng yêu cầu hủy'
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã hủy đơn đặt chỗ thành công và hoàn trả chỗ trống.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi hủy đơn: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

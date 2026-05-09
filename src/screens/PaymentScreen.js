@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, TouchableOpacity, Image, ActivityIndicator, ScrollView, Alert, Share } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Image, ActivityIndicator, ScrollView, Alert, Share, Modal, StatusBar } from 'react-native';
 import { ChevronLeft, Copy, CheckCircle2, Clock, AlertCircle, Share2, ShieldCheck, ArrowRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -73,6 +73,41 @@ const PaymentScreen = ({ route, navigation }) => {
       console.error('Lỗi check status:', error);
     } finally {
       if (!isSilent) setChecking(false);
+    }
+  };
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+
+  const CANCEL_REASONS = [
+    'Thay đổi kế hoạch du lịch',
+    'Thông tin đơn hàng bị sai',
+    'Tìm thấy dịch vụ khác tốt hơn',
+    'Gặp lỗi khi thanh toán',
+    'Lý do khác'
+  ];
+
+  const handleCancelBooking = async () => {
+    if (!selectedReason) {
+      Alert.alert('Thông báo', 'Vui lòng chọn lý do hủy.');
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      const res = await bookingApi.cancelBooking(bookingId, selectedReason);
+      if (res.success) {
+        setShowCancelModal(false);
+        Alert.alert('Thành công', 'Đơn hàng của bạn đã được hủy.', [
+          { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Đặt chỗ' }) }
+        ]);
+      }
+    } catch (error) {
+      console.error('Lỗi khi hủy đơn:', error);
+      Alert.alert('Lỗi', 'Không thể hủy đơn hàng lúc này.');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -212,11 +247,86 @@ const PaymentScreen = ({ route, navigation }) => {
 
         <TouchableOpacity
           style={styles.cancelBtn}
-          onPress={() => navigation.goBack()}
+          onPress={() => setShowCancelModal(true)}
         >
           <AppText style={styles.cancelBtnText}>Hủy giao dịch</AppText>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal chọn lý do hủy */}
+      <View>
+        <StatusBar barStyle={showCancelModal ? "light-content" : "dark-content"} />
+        <Modal
+          visible={showCancelModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowCancelModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+              style={styles.modalDismiss} 
+              activeOpacity={1} 
+              onPress={() => setShowCancelModal(false)} 
+            />
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHandle} />
+                <AppText style={styles.modalTitle}>Lý do hủy đơn hàng</AppText>
+                <AppText style={styles.modalSubtitle}>Vui lòng cho chúng tôi biết tại sao bạn muốn hủy</AppText>
+              </View>
+
+              <View style={styles.reasonsList}>
+                {CANCEL_REASONS.map((reason) => (
+                  <TouchableOpacity
+                    key={reason}
+                    style={[
+                      styles.reasonItem,
+                      selectedReason === reason && styles.selectedReasonItem
+                    ]}
+                    onPress={() => setSelectedReason(reason)}
+                  >
+                    <AppText style={[
+                      styles.reasonText,
+                      selectedReason === reason && styles.selectedReasonText
+                    ]}>
+                      {reason}
+                    </AppText>
+                    <View style={[
+                      styles.radioCircle,
+                      selectedReason === reason && styles.selectedRadioCircle
+                    ]}>
+                      {selectedReason === reason && <View style={styles.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity 
+                  style={styles.cancelModalBtn}
+                  onPress={() => setShowCancelModal(false)}
+                >
+                  <AppText style={styles.cancelModalBtnText}>Quay lại</AppText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.confirmModalBtn,
+                    (!selectedReason || cancelling) && { opacity: 0.5 }
+                  ]}
+                  onPress={handleCancelBooking}
+                  disabled={!selectedReason || cancelling}
+                >
+                  {cancelling ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <AppText style={styles.confirmModalBtnText}>Xác nhận hủy</AppText>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
     </View>
   );
 };
@@ -289,7 +399,115 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center',
     gap: 12, paddingHorizontal: 30, paddingVertical: 16, borderRadius: 16
   },
-  doneButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  doneButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalDismiss: {
+    flex: 1,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 40,
+    minHeight: 400,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalHeader: {
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+  },
+  reasonsList: {
+    marginBottom: 32,
+  },
+  reasonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  selectedReasonItem: {
+    borderBottomColor: Colors.primary + '33',
+  },
+  reasonText: {
+    fontSize: 15,
+    color: Colors.text,
+  },
+  selectedReasonText: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedRadioCircle: {
+    borderColor: Colors.primary,
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelModalBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+  },
+  cancelModalBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: Colors.textSecondary,
+  },
+  confirmModalBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+  },
+  confirmModalBtnText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
 });
 
 export default PaymentScreen;

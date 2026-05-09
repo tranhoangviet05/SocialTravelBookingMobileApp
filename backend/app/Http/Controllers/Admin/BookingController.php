@@ -107,37 +107,27 @@ class BookingController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pending,confirmed,ongoing,completed,cancelled',
-            'cancel_reason' => 'nullable|string|required_if:status,cancelled',
+            'status' => 'required|in:cancelled', // Admin chỉ có quyền hủy khi có tranh chấp
+            'cancel_reason' => 'required|string|min:10', // Yêu cầu lý do chi tiết
         ]);
 
         $booking = Booking::find($id);
         if (!$booking) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy đơn đặt chỗ'
-            ], 404);
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn đặt chỗ'], 404);
         }
 
         try {
-            $booking->status = $request->status;
-
-            if ($request->status === 'cancelled') {
-                $booking->cancel_reason = $request->cancel_reason;
-                $booking->cancelled_at = now();
-            }
-
-            if ($request->status === 'confirmed' && $booking->payment_status === 'paid' && !$booking->paid_at) {
-                $booking->paid_at = now();
-            }
+            // Admin can thiệp hủy đơn
+            $booking->status = 'cancelled';
+            $booking->cancel_reason = '[ADMIN CAN THIỆP] ' . $request->cancel_reason;
+            $booking->cancelled_at = now();
 
             $booking->save();
-            $booking->load(['user:id,display_name,email', 'service:id,name']);
-
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Cập nhật trạng thái đơn đặt chỗ thành công',
-                'data' => $booking
+                'message' => 'Admin đã thực hiện hủy đơn hàng thành công.',
+                'data' => $booking->load(['user', 'service'])
             ]);
         } catch (\Throwable $e) {
             Log::error('Update booking status error: ' . $e->getMessage());

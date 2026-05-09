@@ -45,5 +45,27 @@ export const bookingApi = {
       console.error('Lỗi khi áp dụng mã giảm giá:', error);
       throw error;
     }
+  },
+
+  getMyBookings: async () => {
+    try {
+      const response = await apiClient.get('/user/bookings');
+      return response.data;
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách đặt chỗ:', error);
+      throw error;
+    }
+  },
+
+  cancelBooking: async (bookingId, reason = 'Người dùng hủy') => {
+    try {
+      const response = await apiClient.post(`/user/bookings/${bookingId}/cancel`, {
+        cancel_reason: reason
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Lỗi khi hủy đặt chỗ:', error);
+      throw error;
+    }
   }
 };

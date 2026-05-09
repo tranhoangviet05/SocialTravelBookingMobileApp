@@ -250,16 +250,18 @@ const BookingManagement = () => {
                                             >
                                                 <Eye size={18} />
                                             </button>
-                                            <button
-                                                onClick={() => {
-                                                    setStatusModal({ open: true, booking: bk });
-                                                    setNewStatus(bk.status);
-                                                }}
-                                                className="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"
-                                                title="Cập nhật trạng thái"
-                                            >
-                                                <CheckCircle2 size={18} />
-                                            </button>
+                                            {bk.status !== 'cancelled' && (
+                                                <button
+                                                    onClick={() => {
+                                                        setStatusModal({ open: true, booking: bk });
+                                                        setNewStatus('cancelled');
+                                                    }}
+                                                    className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                                    title="Hủy đơn này"
+                                                >
+                                                    <XCircle size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -325,25 +327,19 @@ const BookingManagement = () => {
                                         onChange={(e) => setNewStatus(e.target.value)}
                                         className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                                     >
-                                        <option value="pending">Chờ xử lý</option>
-                                        <option value="confirmed">Đã xác nhận</option>
-                                        <option value="ongoing">Đang diễn ra</option>
-                                        <option value="completed">Hoàn thành</option>
-                                        <option value="cancelled">Đã hủy</option>
+                                        <option value="cancelled">Hủy đơn hàng (Admin can thiệp)</option>
                                     </select>
                                 </div>
 
-                                {newStatus === 'cancelled' && (
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-slate-700 uppercase tracking-widest">Lý do hủy</label>
-                                        <textarea
-                                            value={cancelReason}
-                                            onChange={(e) => setCancelReason(e.target.value)}
-                                            className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 resize-none font-medium"
-                                            placeholder="Nhập lý do hủy đơn..."
-                                        />
-                                    </div>
-                                )}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest">Lý do hủy (Bắt buộc)</label>
+                                    <textarea
+                                        value={cancelReason}
+                                        onChange={(e) => setCancelReason(e.target.value)}
+                                        className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 resize-none font-medium"
+                                        placeholder="Nhập lý do Admin can thiệp hủy đơn này..."
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex gap-3 mt-8">

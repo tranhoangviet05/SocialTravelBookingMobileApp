@@ -79,12 +79,20 @@ class BookingController extends Controller
         $newStatus = $request->status;
 
         $validTransitions = [
-            'pending' => ['confirmed', 'cancelled'],
             'confirmed' => ['ongoing', 'cancelled'],
             'ongoing' => ['completed'],
         ];
 
         $currentStatus = $booking->status;
+        
+        // Nếu là pending, Provider không được làm gì cả
+        if ($currentStatus === 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => "Đơn hàng đang chờ khách thanh toán. Bạn không thể thực hiện hành động nào lúc này."
+            ], 422);
+        }
+
         if (!isset($validTransitions[$currentStatus]) || !in_array($newStatus, $validTransitions[$currentStatus])) {
             return response()->json([
                 'success' => false,

@@ -129,28 +129,27 @@ const MyBookings = () => {
         switch (booking.status) {
             case 'pending':
                 return (
-                    <div className="flex gap-2">
-                        <button disabled={isProcessing}
-                            onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
-                            className={`${btnClass} bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20`}>
-                            {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={13} />}
-                            Xác nhận
-                        </button>
-                        <button disabled={isProcessing}
-                            onClick={() => setCancelModal(booking)}
-                            className={`${btnClass} bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-100`}>
-                            <XCircle size={13} /> Từ chối
-                        </button>
+                    <div className="flex flex-col items-end gap-1">
+                        <span className="text-[11px] font-bold text-amber-500 bg-amber-50 px-3 py-1 rounded-lg border border-amber-100">
+                            Chờ khách thanh toán...
+                        </span>
+                        <p className="text-[10px] text-slate-400 italic">Hệ thống sẽ tự xác nhận khi có tiền</p>
                     </div>
                 );
             case 'confirmed':
                 return (
-                    <button disabled={isProcessing}
-                        onClick={() => handleStatusUpdate(booking.id, 'ongoing')}
-                        className={`${btnClass} bg-violet-500 text-white hover:bg-violet-600 shadow-lg shadow-violet-500/20`}>
-                        {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={13} />}
-                        Bắt đầu
-                    </button>
+                    <div className="flex flex-col gap-2">
+                        <button disabled={isProcessing}
+                            onClick={() => handleStatusUpdate(booking.id, 'ongoing')}
+                            className={`${btnClass} bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-600/20`}>
+                            {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={13} />}
+                            Xác nhận Check-in
+                        </button>
+                        <a href={`tel:${booking.contact_phone || booking.user?.phone}`}
+                            className={`${btnClass} bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 justify-center`}>
+                            Liên hệ khách
+                        </a>
+                    </div>
                 );
             case 'ongoing':
                 return (
@@ -276,6 +275,11 @@ const MyBookings = () => {
                                             {booking.num_adults} người lớn
                                             {booking.num_children > 0 && ` · ${booking.num_children} trẻ em`}
                                         </span>
+                                        {(booking.contact_phone || booking.user?.phone) && (
+                                            <span className="text-indigo-500 font-bold">
+                                                SĐT: {booking.contact_phone || booking.user?.phone}
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* Cancel reason */}

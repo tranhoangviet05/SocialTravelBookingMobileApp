@@ -6,7 +6,8 @@ import SyncLoadingScreen from '../screens/SyncLoadingScreen';
 import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import { BookingScreen, ExploreScreen } from '../screens/PlaceholderScreens';
+import BookingScreen from '../screens/BookingScreen';
+import { ExploreScreen } from '../screens/PlaceholderScreens';
 import FloatingTabBar from '../components/navigation/FloatingTabBar';
 
 const Tab = createBottomTabNavigator();
