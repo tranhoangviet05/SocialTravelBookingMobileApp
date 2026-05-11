@@ -62,6 +62,7 @@ const ProviderLayout = () => {
             if (name === 'reviews') label = 'Đánh giá';
             if (name === 'wallet') label = 'Ví & Doanh thu';
             if (name === 'settings') label = 'Cài đặt cửa hàng';
+            if (name === 'messages') label = 'Tin nhắn';
             if (name === 'dashboard') label = 'Bảng điều khiển';
             return (
                 <div key={routeTo} className="flex items-center">

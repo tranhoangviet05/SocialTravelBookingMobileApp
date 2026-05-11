@@ -50,6 +50,11 @@ class ServiceDetailResource extends JsonResource
                     'business_name' => $this->provider->business_name,
                     'contact_phone' => $this->provider->contact_phone,
                     'avatar_url' => $this->provider->avatar_url,
+                    'user' => $this->provider->user ? [
+                        'id' => $this->provider->user->id,
+                        'display_name' => $this->provider->user->display_name,
+                        'avatar_url' => $this->provider->user->avatar_url,
+                    ] : null,
                 ];
             }),
             'location' => $this->when($this->relationLoaded('location'), function () {

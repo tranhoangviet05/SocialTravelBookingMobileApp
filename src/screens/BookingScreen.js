@@ -10,15 +10,17 @@ import {
   ActivityIndicator,
   StatusBar,
   Alert,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-  Calendar, 
-  MapPin, 
-  ChevronRight, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Calendar,
+  MapPin,
+  ChevronRight,
+  Clock,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   Ticket
 } from 'lucide-react-native';
@@ -26,204 +28,121 @@ import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import { bookingApi } from '../api/bookingApi';
 import AppText from '../components/common/AppText';
+import BookingCard from '../components/booking/BookingCard';
+import Skeleton from '../components/common/Skeleton';
+import { BookingContext } from '../store/BookingContext';
 
-const TABS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'pending', label: 'Chờ xử lý' },
-  { id: 'confirmed', label: 'Đã xác nhận' },
-  { id: 'completed', label: 'Hoàn thành' },
-  { id: 'cancelled', label: 'Đã hủy' },
-];
+const { width } = Dimensions.get('window');
 
-const StatusBadge = ({ status, paymentStatus }) => {
-  let config = {
-    label: 'Không xác định',
-    color: '#64748B',
-    bgColor: '#F1F5F9',
-    icon: AlertCircle
-  };
-
-  if (status === 'cancelled') {
-    config = { label: 'Đã hủy', color: '#EF4444', bgColor: '#FEF2F2', icon: XCircle };
-  } else if (status === 'completed') {
-    config = { label: 'Hoàn thành', color: '#10B981', bgColor: '#ECFDF5', icon: CheckCircle2 };
-  } else if (status === 'confirmed') {
-    config = { label: 'Đã xác nhận', color: '#3B82F6', bgColor: '#EFF6FF', icon: CheckCircle2 };
-  } else if (paymentStatus === 'pending') {
-    config = { label: 'Chờ thanh toán', color: '#F59E0B', bgColor: '#FFFBEB', icon: Clock };
-  } else if (status === 'pending') {
-    config = { label: 'Chờ xử lý', color: '#8B5CF6', bgColor: '#F5F3FF', icon: Clock };
-  }
-
-  const Icon = config.icon;
-
-  return (
-    <View style={[styles.badge, { backgroundColor: config.bgColor }]}>
-      <Icon size={12} color={config.color} />
-      <AppText style={[styles.badgeText, { color: config.color }]}>{config.label}</AppText>
+const BookingSkeleton = () => (
+  <View style={styles.cardSkeleton}>
+    <View style={styles.skeletonHeader}>
+      <Skeleton width={80} height={80} borderRadius={12} />
+      <View style={styles.skeletonInfo}>
+        <View style={styles.skeletonTitleRow}>
+          <Skeleton width={width * 0.4} height={18} borderRadius={4} />
+          <Skeleton width={60} height={20} borderRadius={10} />
+        </View>
+        <View style={{ marginTop: 8, gap: 6 }}>
+          <Skeleton width={width * 0.3} height={14} borderRadius={4} />
+          <Skeleton width={width * 0.5} height={14} borderRadius={4} />
+        </View>
+      </View>
     </View>
-  );
-};
-
-const BookingCard = ({ booking, onPress }) => {
-  const service = booking.service || {};
-  const isPendingPayment = booking.payment_status === 'pending' && booking.status !== 'cancelled';
-
-  return (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => onPress(booking)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardHeader}>
-        <Image 
-          source={{ uri: service.image || 'https://via.placeholder.com/150' }} 
-          style={styles.serviceImage} 
-        />
-        <View style={styles.headerInfo}>
-          <View style={styles.titleRow}>
-            <AppText style={styles.serviceName} numberOfLines={1}>{service.name}</AppText>
-            <StatusBadge status={booking.status} paymentStatus={booking.payment_status} />
-          </View>
-          <View style={styles.infoRow}>
-            <MapPin size={14} color={Colors.textSecondary} />
-            <AppText style={styles.infoText} numberOfLines={1}>{service.type === 'hotel' ? 'Khách sạn' : 'Tour du lịch'}</AppText>
-          </View>
-          <View style={styles.infoRow}>
-            <Calendar size={14} color={Colors.textSecondary} />
-            <AppText style={styles.infoText}>
-              {new Date(booking.check_in_date).toLocaleDateString('vi-VN')}
-              {booking.check_out_date && ` - ${new Date(booking.check_out_date).toLocaleDateString('vi-VN')}`}
-            </AppText>
-          </View>
+    <View style={styles.skeletonDivider} />
+    <View style={styles.skeletonFooter}>
+      <View>
+        <Skeleton width={80} height={12} borderRadius={4} />
+        <View style={{ marginTop: 5 }}>
+          <Skeleton width={120} height={22} borderRadius={4} />
         </View>
       </View>
-
-      <View style={styles.cardDivider} />
-
-      <View style={styles.cardFooter}>
-        <View>
-          <AppText style={styles.priceLabel}>Tổng thanh toán</AppText>
-          <AppText style={styles.priceValue}>{booking.total_amount?.toLocaleString()}đ</AppText>
-        </View>
-        
-        {isPendingPayment ? (
-          <TouchableOpacity 
-            style={styles.payButton}
-            onPress={(e) => {
-              // Prevent parent onPress
-              onPress(booking, true);
-            }}
-          >
-            <AppText style={styles.payButtonText}>Thanh toán ngay</AppText>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.detailBtn}>
-            <AppText style={styles.detailBtnText}>Chi tiết</AppText>
-            <ChevronRight size={16} color={Colors.primary} />
-          </View>
-        )}
-      </View>
-      
-      <View style={styles.bookingCodeContainer}>
-        <Ticket size={12} color={Colors.textSecondary} style={{ opacity: 0.5 }} />
-        <AppText style={styles.bookingCodeText}>Mã: {booking.booking_code}</AppText>
-      </View>
-    </TouchableOpacity>
-  );
-};
+      <Skeleton width={110} height={38} borderRadius={12} />
+    </View>
+    <View style={styles.skeletonCode}>
+      <Skeleton width={100} height={12} borderRadius={4} />
+    </View>
+  </View>
+);
 
 const BookingScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState('all');
-  const [bookings, setBookings] = useState([]);
-  const [filteredBookings, setFilteredBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { 
+    filteredBookings, 
+    loading, 
+    activeTab, 
+    setActiveTab, 
+    fetchBookings 
+  } = React.useContext(BookingContext);
 
-  const fetchBookings = async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    try {
-      const response = await bookingApi.getMyBookings();
-      if (response.success) {
-        setBookings(response.data);
-      }
-    } catch (error) {
-      console.error('Fetch bookings error:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchBookings();
   }, []);
 
-  useEffect(() => {
-    if (activeTab === 'all') {
-      setFilteredBookings(bookings);
-    } else if (activeTab === 'pending') {
-      setFilteredBookings(bookings.filter(b => b.status === 'pending' || b.payment_status === 'pending'));
-    } else {
-      setFilteredBookings(bookings.filter(b => b.status === activeTab));
-    }
-  }, [activeTab, bookings]);
-
-  const onRefresh = useCallback(() => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    fetchBookings(false);
-  }, []);
+    await fetchBookings(false);
+    setRefreshing(false);
+  };
 
-  const handleBookingPress = async (booking, isPayAction = false) => {
-    if (isPayAction || (booking.payment_status === 'pending' && booking.status !== 'cancelled')) {
-      try {
-        setLoading(true);
-        const payResponse = await bookingApi.initiatePayment(booking.id, 'sepay');
-        setLoading(false);
-
-        // Xác định dữ liệu thanh toán (linh hoạt cấu trúc như ở CheckoutScreen)
-        const paymentData = (payResponse.data && (payResponse.data.qr_url || payResponse.data.payment_info)) 
-                            ? payResponse.data 
-                            : (payResponse.qr_url ? payResponse : null);
-
-        if (paymentData) {
-          navigation.navigate('Payment', {
-            bookingId: booking.id,
-            paymentInfo: paymentData.payment_info || paymentData,
-            totalAmount: booking.total_amount
-          });
-        } else {
-          Alert.alert('Lỗi', 'Không thể lấy thông tin thanh toán.');
-        }
-      } catch (error) {
-        setLoading(false);
-        console.error('Lỗi khởi tạo thanh toán:', error);
-        Alert.alert('Lỗi', 'Có lỗi xảy ra khi chuẩn bị thanh toán.');
-      }
+  const handleBookingPress = (booking, type = 'detail') => {
+    if (type === 'pay') {
+      navigation.navigate('Payment', { bookingId: booking.id });
     } else {
-      // Navigate to detailed booking view (to be implemented)
-      // For now just show alert or stay here
+      navigation.navigate('BookingDetail', { bookingId: booking.id });
+    }
+  };
+
+  const handleAction = async (booking, actionType) => {
+    try {
+      let response;
+      if (actionType === 'checkin') {
+        response = await bookingApi.checkIn(booking.id);
+      } else if (actionType === 'undo-checkin') {
+        response = await bookingApi.undoCheckIn(booking.id);
+      } else if (actionType === 'checkout') {
+        response = await bookingApi.checkOut(booking.id);
+      }
+
+      if (response && response.success) {
+        Alert.alert('Thành công', response.message);
+        fetchBookings(false); // Reload list
+      } else {
+        Alert.alert('Thất bại', response?.message || 'Có lỗi xảy ra');
+      }
+    } catch (error) {
+      console.error(`Action ${actionType} error:`, error);
+      Alert.alert('Lỗi', 'Không thể thực hiện hành động này');
     }
   };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconBg}>
-        <Calendar size={48} color={Colors.textSecondary} />
+        <Ticket size={40} color={Colors.textSecondary} />
       </View>
-      <AppText style={styles.emptyTitle}>Chưa có đặt chỗ nào</AppText>
+      <AppText style={styles.emptyTitle}>Chưa có đơn đặt chỗ nào</AppText>
       <AppText style={styles.emptySubtitle}>
-        Các chuyến đi và dịch vụ bạn đặt sẽ xuất hiện tại đây.
+        Bạn chưa thực hiện đặt chỗ nào cho trạng thái này. Khám phá các tour và khách sạn ngay!
       </AppText>
       <TouchableOpacity 
         style={styles.exploreBtn}
-        onPress={() => navigation.navigate('Tìm kiếm')}
+        onPress={() => navigation.navigate('Home')}
       >
         <AppText style={styles.exploreBtnText}>Khám phá ngay</AppText>
       </TouchableOpacity>
     </View>
   );
+
+  const tabs = [
+    { id: 'all', label: 'Tất cả' },
+    { id: 'pending', label: 'Chờ thanh toán' },
+    { id: 'paid', label: 'Đã thanh toán' },
+    { id: 'completed', label: 'Hoàn thành' },
+    { id: 'cancelled', label: 'Đã hủy' },
+  ];
 
   return (
     <View style={styles.container}>
@@ -232,49 +151,47 @@ const BookingScreen = ({ navigation }) => {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <AppText style={styles.headerTitle}>Chuyến đi của tôi</AppText>
-        <AppText style={styles.headerSubtitle}>Quản lý các dịch vụ đã đặt</AppText>
+        <AppText style={styles.headerSubtitle}>Quản lý các dịch vụ bạn đã đặt</AppText>
       </View>
 
       {/* Tabs */}
       <View style={styles.tabWrapper}>
-        <FlatList
-          data={TABS}
-          horizontal
+        <ScrollView 
+          horizontal 
           showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.tabList}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.tabItem,
-                activeTab === item.id && styles.activeTabItem
-              ]}
-              onPress={() => setActiveTab(item.id)}
+        >
+          {tabs.map(tab => (
+            <TouchableOpacity 
+              key={tab.id}
+              style={[styles.tabItem, activeTab === tab.id && styles.activeTabItem]}
+              onPress={() => setActiveTab(tab.id)}
             >
-              <AppText 
-                style={[
-                  styles.tabLabel,
-                  activeTab === item.id && styles.activeTabLabel
-                ]}
-              >
-                {item.label}
+              <AppText style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>
+                {tab.label}
               </AppText>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <AppText style={styles.loadingText}>Đang tải danh sách...</AppText>
+      {/* Content */}
+      {loading && !refreshing ? (
+        <View style={styles.listContent}>
+          <BookingSkeleton />
+          <BookingSkeleton />
+          <BookingSkeleton />
         </View>
       ) : (
         <FlatList
           data={filteredBookings}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <BookingCard booking={item} onPress={handleBookingPress} />
+            <BookingCard 
+              booking={item} 
+              onPress={handleBookingPress} 
+              onAction={handleAction}
+            />
           )}
           contentContainerStyle={styles.listContent}
           refreshControl={
@@ -298,7 +215,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.text },
   headerSubtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
-  
+
   tabWrapper: { backgroundColor: '#fff' },
   tabList: { paddingHorizontal: 15, paddingVertical: 12 },
   tabItem: {
@@ -331,7 +248,7 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 16, fontWeight: 'bold', color: Colors.text, flex: 1, marginRight: 8 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   infoText: { fontSize: 13, color: Colors.textSecondary },
-  
+
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -341,13 +258,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   badgeText: { fontSize: 10, fontWeight: 'bold' },
-  
+
   cardDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
-  
+
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   priceLabel: { fontSize: 11, color: Colors.textSecondary },
   priceValue: { fontSize: 17, fontWeight: 'bold', color: Colors.primary },
-  
+
   payButton: {
     backgroundColor: Colors.primary,
     paddingHorizontal: 16,
@@ -355,10 +272,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   payButtonText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-  
+
   detailBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   detailBtnText: { fontSize: 13, fontWeight: '600', color: Colors.primary },
-  
+
   bookingCodeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -374,9 +291,9 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 12, color: Colors.textSecondary, fontSize: 14 },
 
   emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 60, paddingHorizontal: 40 },
-  emptyIconBg: { 
-    width: 100, height: 100, borderRadius: 50, backgroundColor: '#F1F5F9', 
-    alignItems: 'center', justifyContent: 'center', marginBottom: 24 
+  emptyIconBg: {
+    width: 100, height: 100, borderRadius: 50, backgroundColor: '#F1F5F9',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 24
   },
   emptyTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.text, marginBottom: 8 },
   emptySubtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 32 },
@@ -387,6 +304,25 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   exploreBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+
+  // Skeleton Styles
+  cardSkeleton: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+  },
+  skeletonHeader: { flexDirection: 'row' },
+  skeletonInfo: { flex: 1, marginLeft: 16 },
+  skeletonTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  skeletonDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  skeletonFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  skeletonCode: { 
+    marginTop: 10, 
+    paddingTop: 8, 
+    borderTopWidth: 1, 
+    borderTopColor: '#F8FAFC' 
+  },
 });
 
 export default BookingScreen;

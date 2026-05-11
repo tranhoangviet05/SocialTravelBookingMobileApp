@@ -21,6 +21,7 @@ const menuItems = [
     { icon: Calendar, label: 'Lịch đặt chỗ', path: API_ENDPOINTS.PROVIDER_BOOKINGS },
     { icon: Star, label: 'Đánh giá khách hàng', path: API_ENDPOINTS.PROVIDER_REVIEWS },
     { icon: Wallet, label: 'Ví tiền & Doanh thu', path: API_ENDPOINTS.PROVIDER_WALLET },
+    { icon: MessageSquare, label: 'Tin nhắn', path: API_ENDPOINTS.PROVIDER_MESSAGES },
     { icon: Settings, label: 'Cài đặt cửa hàng', path: API_ENDPOINTS.PROVIDER_SETTINGS },
 ];
 

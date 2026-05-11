@@ -80,7 +80,7 @@ class BookingController extends Controller
     public function show($id)
     {
         $booking = Booking::with([
-            'user:id,display_name,email,avatar_url,phone',
+            'user:id,display_name,email,avatar_url',
             'service:id,name,slug,type,base_price,address',
             'service.media',
             'provider.user:id,display_name,email',

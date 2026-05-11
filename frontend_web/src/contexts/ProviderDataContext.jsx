@@ -98,11 +98,11 @@ export const ProviderDataProvider = ({ children }) => {
         finally { setOneLoading('services', false); }
     }, [loadedStates.services]);
 
-    const fetchBookings = useCallback(async (force = false) => {
-        if (loadedStates.bookings && !force) return;
+    const fetchBookings = useCallback(async (force = false, status = 'all') => {
+        if (loadedStates.bookings && !force && status === 'all') return;
         setOneLoading('bookings', true);
         try {
-            const res = await providerApi.getBookings();
+            const res = await providerApi.getBookings(status);
             if (res.success) {
                 setBookings(res.data);
                 setOneLoaded('bookings', true);

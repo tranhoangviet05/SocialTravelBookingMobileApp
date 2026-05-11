@@ -27,10 +27,6 @@ const BookingManagement = () => {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterPayment, setFilterPayment] = useState('');
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
-    const [statusModal, setStatusModal] = useState({ open: false, booking: null });
-    const [newStatus, setNewStatus] = useState('');
-    const [cancelReason, setCancelReason] = useState('');
-    const [updating, setUpdating] = useState(false);
     const [detailModal, setDetailModal] = useState({ open: false, booking: null, loading: false });
 
     const toast = useNotification();
@@ -76,37 +72,6 @@ const BookingManagement = () => {
             console.error('Failed to load booking detail:', error);
             toast?.error?.('Không thể tải chi tiết đơn');
             setDetailModal({ open: false, booking: null, loading: false });
-        }
-    };
-
-    const handleStatusUpdate = async () => {
-        if (!statusModal.booking || !newStatus) return;
-        if (newStatus === 'cancelled' && !cancelReason.trim()) {
-            toast?.error?.('Vui lòng nhập lý do hủy');
-            return;
-        }
-
-        setUpdating(true);
-        try {
-            const response = await adminApi.updateBookingStatus(
-                statusModal.booking.id,
-                newStatus,
-                newStatus === 'cancelled' ? cancelReason : null
-            );
-            if (response.success) {
-                toast?.success?.('Cập nhật trạng thái thành công');
-                setBookings(bookings.map(b =>
-                    b.id === statusModal.booking.id ? { ...b, status: newStatus } : b
-                ));
-                setStatusModal({ open: false, booking: null });
-                setNewStatus('');
-                setCancelReason('');
-            }
-        } catch (error) {
-            console.error('Failed to update booking status:', error);
-            toast?.error?.('Lỗi khi cập nhật trạng thái');
-        } finally {
-            setUpdating(false);
         }
     };
 
@@ -250,18 +215,6 @@ const BookingManagement = () => {
                                             >
                                                 <Eye size={18} />
                                             </button>
-                                            {bk.status !== 'cancelled' && (
-                                                <button
-                                                    onClick={() => {
-                                                        setStatusModal({ open: true, booking: bk });
-                                                        setNewStatus('cancelled');
-                                                    }}
-                                                    className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                                                    title="Hủy đơn này"
-                                                >
-                                                    <XCircle size={18} />
-                                                </button>
-                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -301,62 +254,6 @@ const BookingManagement = () => {
                     </>
                 )}
 
-            {/* Status Update Modal */}
-            {statusModal.open && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-                    <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-[modalIn_0.3s_ease-out]">
-                        <div className="p-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-black text-slate-900">Cập nhật trạng thái đơn</h3>
-                                <button onClick={() => setStatusModal({ open: false, booking: null })} className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="bg-slate-50 p-4 rounded-2xl mb-6">
-                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Mã đơn</p>
-                                <p className="text-lg font-black text-slate-900 mt-1">{statusModal.booking?.booking_code}</p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest">Trạng thái mới</label>
-                                    <select
-                                        value={newStatus}
-                                        onChange={(e) => setNewStatus(e.target.value)}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                                    >
-                                        <option value="cancelled">Hủy đơn hàng (Admin can thiệp)</option>
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest">Lý do hủy (Bắt buộc)</label>
-                                    <textarea
-                                        value={cancelReason}
-                                        onChange={(e) => setCancelReason(e.target.value)}
-                                        className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 resize-none font-medium"
-                                        placeholder="Nhập lý do Admin can thiệp hủy đơn này..."
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 mt-8">
-                                <button onClick={() => setStatusModal({ open: false, booking: null })} className="flex-1 py-4 text-sm font-bold text-slate-500 hover:bg-gray-100 rounded-2xl transition-all">Hủy</button>
-                                <button
-                                    onClick={handleStatusUpdate}
-                                    disabled={updating}
-                                    className="flex-[2] py-4 bg-sky-500 hover:bg-sky-600 text-white text-sm font-black rounded-2xl shadow-lg shadow-sky-500/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {updating ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                                    Cập nhật
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Detail Modal */}
             {detailModal.open && (

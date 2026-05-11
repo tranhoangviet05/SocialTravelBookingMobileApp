@@ -7,7 +7,9 @@ import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import BookingScreen from '../screens/BookingScreen';
-import { ExploreScreen } from '../screens/PlaceholderScreens';
+import ExploreScreen from '../screens/ExploreScreen';
+import PostDetailScreen from '../screens/PostDetailScreen';
+import { PlaceholderScreen } from '../screens/PlaceholderScreens';
 import FloatingTabBar from '../components/navigation/FloatingTabBar';
 
 const Tab = createBottomTabNavigator();
@@ -35,6 +37,10 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 
+import BookingDetailScreen from '../screens/BookingDetailScreen';
+import ChatScreen from '../screens/ChatScreen';
+import ConversationListScreen from '../screens/ConversationListScreen';
+
 const AppNavigator = () => {
   return (
     <Stack.Navigator
@@ -49,6 +55,10 @@ const AppNavigator = () => {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="BookingDetail" component={BookingDetailScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="ConversationList" component={ConversationListScreen} />
     </Stack.Navigator>
   );
 };

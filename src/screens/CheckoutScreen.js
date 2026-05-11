@@ -11,6 +11,7 @@ import { bookingApi } from '../api/bookingApi';
 import { profileApi } from '../api/profileApi';
 import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/common/Skeleton';
+import { formatCurrency } from '../utils/helpers';
 
 // Components
 import ServiceSummaryCard from '../components/checkout/ServiceSummaryCard';
@@ -433,7 +434,7 @@ const CheckoutScreen = ({ route, navigation }) => {
       <View style={styles.footer}>
         <View style={styles.footerPrice}>
           <AppText style={styles.footerLabel}>Tổng thanh toán</AppText>
-          <AppText style={styles.footerValue}>{(totalAmount || 0).toLocaleString()}đ</AppText>
+          <AppText style={styles.footerValue}>{formatCurrency(totalAmount || 0)}</AppText>
         </View>
         <TouchableOpacity
           style={[styles.payButton, submitting && { opacity: 0.8 }]}

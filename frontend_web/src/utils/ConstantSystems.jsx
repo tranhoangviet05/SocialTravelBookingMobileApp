@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
     PROVIDER_REVIEWS: '/provider/reviews',
     PROVIDER_WALLET: '/provider/wallet',
     PROVIDER_SETTINGS: '/provider/settings',
+    PROVIDER_MESSAGES: '/provider/messages',
 
     // Social
     SOCIAL_POSTS: '/social/posts',

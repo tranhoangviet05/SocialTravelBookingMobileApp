@@ -18,6 +18,8 @@ import {
 
 import RootNavigator from './src/navigation/RootNavigator';
 import { AuthProvider } from './src/store/AuthContext';
+import { SocialProvider } from './src/store/SocialContext';
+import { BookingProvider } from './src/store/BookingContext';
 
 // Giữ màn hình splash
 SplashScreen.preventAutoHideAsync();
@@ -45,10 +47,14 @@ export default function App() {
     <GestureHandlerRootView style={styles.root} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <AuthProvider>
-          <NavigationContainer>
-            <StatusBar style="light" />
-            <RootNavigator />
-          </NavigationContainer>
+          <SocialProvider>
+            <BookingProvider>
+              <NavigationContainer>
+                <StatusBar style="light" />
+                <RootNavigator />
+              </NavigationContainer>
+            </BookingProvider>
+          </SocialProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

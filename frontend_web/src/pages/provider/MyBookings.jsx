@@ -76,8 +76,8 @@ const MyBookings = () => {
     const loading = loadingStates.bookings && bookings.length === 0;
 
     useEffect(() => { 
-        fetchBookings(); 
-    }, [fetchBookings]);
+        fetchBookings(true, statusFilter); 
+    }, [fetchBookings, statusFilter]);
 
     const showToast = (message, type = 'success') => setToast({ message, type });
 
@@ -125,6 +125,7 @@ const MyBookings = () => {
     const getActionButtons = (booking) => {
         const isProcessing = updatingId === booking.id;
         const btnClass = "px-4 py-2 rounded-xl text-[12px] font-bold transition-all disabled:opacity-50 flex items-center gap-1.5";
+        const hasCheckinRequest = booking.tourist_check_in_at && !booking.is_checked_in;
 
         switch (booking.status) {
             case 'pending':
@@ -139,14 +140,21 @@ const MyBookings = () => {
             case 'confirmed':
                 return (
                     <div className="flex flex-col gap-2">
-                        <button disabled={isProcessing}
-                            onClick={() => handleStatusUpdate(booking.id, 'ongoing')}
-                            className={`${btnClass} bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-600/20`}>
-                            {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={13} />}
-                            Xác nhận Check-in
-                        </button>
+                        {hasCheckinRequest ? (
+                            <button disabled={isProcessing}
+                                onClick={() => handleStatusUpdate(booking.id, 'ongoing')}
+                                className={`${btnClass} bg-indigo-600 hover:bg-indigo-700 animate-pulse text-white shadow-lg shadow-indigo-600/20`}>
+                                {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={13} />}
+                                Xác nhận Khách Check-in
+                            </button>
+                        ) : (
+                            <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                                <p className="text-[11px] font-bold text-slate-400">Đang chờ khách hàng check-in...</p>
+                            </div>
+                        )}
                         <a href={`tel:${booking.contact_phone || booking.user?.phone}`}
                             className={`${btnClass} bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 justify-center`}>
+                            <User size={13} />
                             Liên hệ khách
                         </a>
                     </div>
@@ -167,9 +175,9 @@ const MyBookings = () => {
 
     const statusTabs = [
         { key: 'all', label: 'Tất cả', count: bookings.length },
-        { key: 'pending', label: 'Chờ duyệt' },
+        { key: 'checkin_requested', label: 'Yêu cầu Check-in' },
         { key: 'confirmed', label: 'Đã xác nhận' },
-        { key: 'ongoing', label: 'Đang diễn ra' },
+        { key: 'ongoing', label: 'Đang lưu trú' },
         { key: 'completed', label: 'Hoàn thành' },
         { key: 'cancelled', label: 'Đã hủy' },
     ];
@@ -181,9 +189,7 @@ const MyBookings = () => {
         } catch { return dateStr; }
     };
 
-    const filteredBookings = statusFilter === 'all' 
-        ? bookings 
-        : bookings.filter(b => b.status === statusFilter);
+    const filteredBookings = bookings;
 
     return (
         <div className="space-y-6">

@@ -68,9 +68,11 @@ class SocialService
             if (!empty($data['media'])) {
                 foreach ($data['media'] as $index => $item) {
                     $post->media()->create([
-                        'url'   => $item['url'],
-                        'type'  => $item['type'] ?? 'image',
-                        'order' => $index,
+                        'url'    => $item['url'],
+                        'type'   => $item['type'] ?? 'image',
+                        'width'  => $item['width'] ?? null,
+                        'height' => $item['height'] ?? null,
+                        'order'  => $index,
                     ]);
                 }
             }
@@ -89,7 +91,12 @@ class SocialService
             // Cập nhật số lượng bài viết trong social_profile
             $user->socialProfile()->increment('posts_count');
 
-            return $post->load(['author.socialProfile', 'media', 'tags', 'location', 'service.media']);
+            $post = $post->load(['author.socialProfile', 'media', 'tags', 'location', 'service.media']);
+
+            // Phát tín hiệu Real-time cho bài viết mới
+            broadcast(new \App\Events\PostCreated($post));
+
+            return $post;
         });
     }
 
@@ -208,53 +215,29 @@ class SocialService
 
     public function getFeed(User $user, int $perPage = 10, string $mode = 'all')
     {
-        // Lấy danh sách ID những người đang theo dõi
-        $followingIds = \App\Models\Follow::where('follower_id', $user->id)
-                                          ->pluck('following_id')
-                                          ->toArray();
-        
-        // Luôn bao gồm bài viết của chính mình
-        $followingIds[] = $user->id;
-
-        $posts = \App\Models\Post::whereIn('user_id', $followingIds)
+        // Ở chế độ 'all', chúng ta hiển thị tất cả bài viết công khai để bảng tin luôn sôi động
+        // giống như tab "Dành cho bạn" của Threads/TikTok
+        $query = \App\Models\Post::where('visibility', 'public')
+                               ->orWhere('user_id', $user->id) // Bao gồm cả bài viết private của chính mình
                                ->with(['author.socialProfile', 'media', 'tags', 'location', 'service.media'])
                                ->withCount([
                                    'likes as is_liked' => function($query) use ($user) {
                                        $query->where('user_id', $user->id);
                                    }
                                ])
-                               ->orderByDesc('created_at')
-                               ->paginate($perPage);
+                               ->orderByDesc('created_at');
+
+        $posts = $query->paginate($perPage);
 
         // Bổ sung trạng thái follow cho từng author
         $posts->getCollection()->transform(function ($post) use ($user) {
-            $post->author->is_following = \App\Models\Follow::where('follower_id', $user->id)
-                                                            ->where('following_id', $post->user_id)
-                                                            ->exists();
-            return $post;
-        });
-
-        // Nếu bản tin theo dõi trống VÀ đang ở chế độ 'all', gợi ý bài viết công khai của mọi người (Discovery Mode)
-        if ($posts->total() === 0 && $mode === 'all') {
-            $discoveryPosts = \App\Models\Post::where('visibility', 'public')
-                                   ->with(['author.socialProfile', 'media', 'tags', 'location', 'service.media'])
-                                   ->withCount([
-                                       'likes as is_liked' => function($query) use ($user) {
-                                           $query->where('user_id', $user->id);
-                                       }
-                                   ])
-                                   ->orderByDesc('created_at')
-                                   ->paginate($perPage);
-            
-            $discoveryPosts->getCollection()->transform(function ($post) use ($user) {
+            if ($post->author) {
                 $post->author->is_following = \App\Models\Follow::where('follower_id', $user->id)
                                                                 ->where('following_id', $post->user_id)
                                                                 ->exists();
-                return $post;
-            });
-            
-            return $discoveryPosts;
-        }
+            }
+            return $post;
+        });
 
         return $posts;
     }
@@ -318,14 +301,53 @@ class SocialService
 
         if ($q) {
             $query->where(function($sub) use ($q) {
-                $sub->where('content', 'like', "%{$q}%")
+                $sub->where('content', 'ILIKE', "%{$q}%")
                     ->orWhereHas('author', function($sub2) use ($q) {
-                        $sub2->where('display_name', 'like', "%{$q}%");
+                        $sub2->where('display_name', 'ILIKE', "%{$q}%");
+                    })
+                    ->orWhereHas('location', function($sub3) use ($q) {
+                        $sub3->where('name', 'ILIKE', "%{$q}%");
                     });
             });
         }
 
-        return $query->orderByDesc('created_at')->paginate($perPage);
+        $results = $query->orderByDesc('created_at')->paginate($perPage);
+
+        // Bổ sung is_following cho tác giả
+        $results->getCollection()->transform(function($post) use ($user) {
+            if ($post->author) {
+                $post->author->is_following = \App\Models\Follow::where('follower_id', $user->id)
+                                                                ->where('following_id', $post->author->id)
+                                                                ->exists();
+            }
+            return $post;
+        });
+
+        return $results;
+    }
+
+    /**
+     * Tìm kiếm tổng hợp (Bài viết + Người dùng)
+     */
+    public function searchAll(User $user, string $q)
+    {
+        $posts = $this->searchPosts($user, $q, null, null, 10);
+        $users = $this->searchUsers($user, $q, 5);
+
+        // Đánh dấu loại dữ liệu để frontend dễ xử lý
+        foreach ($posts->items() as $post) {
+            $post->result_type = 'post';
+        }
+        foreach ($users->items() as $u) {
+            $u->result_type = 'user';
+        }
+
+        return [
+            'posts' => $posts->items(),
+            'users' => $users->items(),
+            // Trả về mảng trộn nếu frontend muốn dùng 1 danh sách duy nhất
+            'merged' => array_merge($posts->items(), $users->items())
+        ];
     }
 
     /**
@@ -336,9 +358,9 @@ class SocialService
         $users = User::with('socialProfile')
                      ->where('social_active', true)
                      ->where(function($query) use ($q) {
-                         $query->where('display_name', 'like', "%{$q}%")
+                         $query->where('display_name', 'ILIKE', "%{$q}%")
                                ->orWhereHas('socialProfile', function($sub) use ($q) {
-                                   $sub->where('username', 'like', "%{$q}%");
+                                   $sub->where('username', 'ILIKE', "%{$q}%");
                                });
                      })
                      ->where('id', '!=', $user->id)

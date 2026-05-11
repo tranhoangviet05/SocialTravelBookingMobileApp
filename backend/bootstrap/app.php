@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Bỏ CSRF cho tất cả route API
         $middleware->validateCsrfTokens(except: [
             'api/*',
+            'broadcasting/*',
         ]);
 
         // Đăng ký CORS middleware cho API

@@ -46,6 +46,7 @@ import ProviderMyBookings from './pages/provider/MyBookings';
 import ProviderMyReviews from './pages/provider/MyReviews';
 import ProviderMyWallet from './pages/provider/MyWallet';
 import ProviderMySettings from './pages/provider/MySettings';
+import ProviderMessages from './pages/provider/Messages';
 import SetupProfile from './pages/provider/SetupProfile';
 import PendingApproval from './pages/provider/PendingApproval';
 
@@ -130,6 +131,7 @@ function App() {
                     <Route path={API_ENDPOINTS.PROVIDER_BOOKINGS} element={<ProviderMyBookings />} />
                     <Route path={API_ENDPOINTS.PROVIDER_REVIEWS} element={<ProviderMyReviews />} />
                     {/* Fallback endpoints without absolute object mapping in case they misalign */}
+                    <Route path={API_ENDPOINTS.PROVIDER_MESSAGES} element={<ProviderMessages />} />
                     <Route path="/provider/wallet" element={<ProviderMyWallet />} />
                     <Route path="/provider/settings" element={<ProviderMySettings />} />
                     <Route path="/provider/setup" element={<SetupProfile />} />

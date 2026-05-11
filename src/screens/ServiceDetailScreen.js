@@ -11,7 +11,7 @@ import {
   ChevronLeft, MapPin, Star, Share2,
   Heart, Calendar, Users, Info, ExternalLink, CheckCircle2, Shield, Clock,
   Sun, BedDouble, CalendarDays, Moon, X, ChevronDown, ChevronUp, Wifi,
-  Coffee, Car, Snowflake, Bath, Wind, Zap, Navigation
+  Coffee, Car, Snowflake, Bath, Wind, Zap, Navigation, MessageSquare
 } from 'lucide-react-native';
 import RBSheet from 'react-native-raw-bottom-sheet';
 import axios from 'axios';
@@ -23,6 +23,7 @@ import { useAuth } from '../hooks/useAuth';
 import Skeleton from '../components/common/Skeleton';
 import CustomDatePicker from '../components/home/CustomDatePicker';
 import { profileApi } from '../api/profileApi';
+import { formatCurrency } from '../utils/helpers';
 
 const { width } = Dimensions.get('window');
 
@@ -391,6 +392,28 @@ const ServiceDetailScreen = ({ route, navigation }) => {
     navigation.navigate('Checkout', checkoutData);
   };
 
+  const handleContactProvider = () => {
+    if (!user) {
+      Alert.alert('Chưa đăng nhập', 'Vui lòng đăng nhập để liên hệ với nhà cung cấp.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+      ]);
+      return;
+    }
+
+    const providerUser = serviceData.provider?.user;
+    if (!providerUser) {
+      Alert.alert('Lỗi', 'Không tìm thấy thông tin liên hệ của nhà cung cấp này.');
+      return;
+    }
+
+    navigation.navigate('Chat', {
+      recipientId: providerUser.id,
+      otherUser: providerUser,
+      businessName: serviceData.provider?.business_name
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
@@ -455,9 +478,7 @@ const ServiceDetailScreen = ({ route, navigation }) => {
               <AppText style={styles.ratingAppText}>{Number(rating).toFixed(1)}</AppText>
               <AppText style={styles.reviewCountAppText}>({reviewCount} đánh giá)</AppText>
             </View>
-            <AppText style={styles.providerName}>{serviceData.provider?.business_name || 'Hệ thống'}</AppText>
           </View>
-
           {!isTour && (
             <TouchableOpacity style={styles.locationRow} onPress={handleOpenMaps}>
               <MapPin color={Colors.primary} size={18} />
@@ -465,6 +486,23 @@ const ServiceDetailScreen = ({ route, navigation }) => {
               <ExternalLink color={Colors.primary} size={16} style={{ marginLeft: 5 }} />
             </TouchableOpacity>
           )}
+
+          {/* Provider Section */}
+          <View style={styles.providerCard}>
+            <View style={styles.providerLeft}>
+              <View style={styles.providerInfoContainer}>
+                <View style={styles.providerHeaderRow}>
+                  <AppText style={styles.providerBusinessName}>{serviceData.provider?.business_name || 'Hệ thống'}</AppText>
+                  <CheckCircle2 size={14} color={Colors.primary} fill={Colors.primary} style={{ marginLeft: 4 }} />
+                </View>
+                <AppText style={styles.providerLabel}>Nhà cung cấp chính thức</AppText>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.contactBtn} onPress={handleContactProvider}>
+              <MessageSquare size={18} color={Colors.primary} />
+              <AppText style={styles.contactBtnAppText}>Liên hệ</AppText>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.divider} />
 
@@ -561,7 +599,7 @@ const ServiceDetailScreen = ({ route, navigation }) => {
                         <Image source={{ uri: room.images?.[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400' }} style={styles.roomImage} />
                         <View style={styles.roomInfo}>
                           <AppText style={styles.roomName}>{room.name}</AppText>
-                          <AppText style={styles.roomPrice}>{Number(getRoomAvailability(room).price).toLocaleString()}đ <AppText style={{ fontSize: 10, color: '#999' }}>{getPriceUnit()}</AppText></AppText>
+                          <AppText style={styles.roomPrice}>{formatCurrency(getRoomAvailability(room).price)} <AppText style={{ fontSize: 10, color: '#999' }}>{getPriceUnit()}</AppText></AppText>
                           <AppText style={styles.roomDesc} numberOfLines={2}>{room.description}</AppText>
                           <View style={styles.roomMetaRow}>
                             <Users size={12} color="#666" />
@@ -794,7 +832,7 @@ const ServiceDetailScreen = ({ route, navigation }) => {
           <AppText style={styles.priceLabel}>{isHotel || isHomestay ? 'Giá phòng' : isTour ? 'Giá tour' : 'Giá dịch vụ'}</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <AppText style={styles.priceValue}>
-              {Number(price).toLocaleString()}đ
+              {formatCurrency(price)}
               <AppText style={{ fontSize: 13, color: Colors.textSecondary, fontWeight: '600' }}> {getPriceUnit()}</AppText>
             </AppText>
           </View>
@@ -1229,6 +1267,62 @@ const styles = StyleSheet.create({
   },
 
   rdSelectBtnAppText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+
+  // ── PROVIDER SECTION STYLES ──
+  providerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginTop: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  providerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  providerInfoContainer: {
+    flex: 1,
+  },
+  providerHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  providerBusinessName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: Colors.text,
+  },
+  providerLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  contactBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary + '30',
+  },
+  contactBtnAppText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: Colors.primary,
+  },
 });
 
 export default ServiceDetailScreen;

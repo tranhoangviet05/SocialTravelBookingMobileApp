@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, TouchableOpacity, Image, ActivityIndicator, ScrollView, Alert, Share, Modal, StatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, TouchableOpacity, Image, ActivityIndicator, ScrollView, Alert, Share, StatusBar, BackHandler } from 'react-native';
+import RBSheet from 'react-native-raw-bottom-sheet';
 import { ChevronLeft, Copy, CheckCircle2, Clock, AlertCircle, Share2, ShieldCheck, ArrowRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import AppText from '../components/common/AppText';
 import { Colors } from '../constants/Colors';
 import { bookingApi } from '../api/bookingApi';
+import { formatCurrency } from '../utils/helpers';
+import PaymentQRCard from '../components/payment/PaymentQRCard';
+import PaymentTimer from '../components/payment/PaymentTimer';
 
 const PaymentScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
@@ -36,11 +40,19 @@ const PaymentScreen = ({ route, navigation }) => {
     return () => clearInterval(interval);
   }, [pollingActive, status]);
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  // Xử lý nút Back vật lý (Android)
+  useEffect(() => {
+    const backAction = () => {
+      if (status === 'pending') {
+        cancelSheetRef.current?.open();
+        return true; // Chặn hành động back mặc định
+      }
+      return false; // Cho phép back nếu đã thanh toán xong
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [status]);
 
   const copyToClipboard = async (text, label) => {
     await Clipboard.setStringAsync(text);
@@ -76,7 +88,7 @@ const PaymentScreen = ({ route, navigation }) => {
     }
   };
 
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  const cancelSheetRef = useRef(null);
   const [cancelling, setCancelling] = useState(false);
   const [selectedReason, setSelectedReason] = useState('');
 
@@ -98,7 +110,7 @@ const PaymentScreen = ({ route, navigation }) => {
     try {
       const res = await bookingApi.cancelBooking(bookingId, selectedReason);
       if (res.success) {
-        setShowCancelModal(false);
+        cancelSheetRef.current?.close();
         Alert.alert('Thành công', 'Đơn hàng của bạn đã được hủy.', [
           { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Đặt chỗ' }) }
         ]);
@@ -114,7 +126,7 @@ const PaymentScreen = ({ route, navigation }) => {
   const handleShareQR = async () => {
     try {
       await Share.share({
-        message: `Thanh toán đơn hàng ${bookingId}. Nội dung: ${paymentInfo.transfer_content}. Số tiền: ${totalAmount.toLocaleString()}đ`,
+        message: `Thanh toán đơn hàng ${bookingId}. Nội dung: ${paymentInfo.transfer_content}. Số tiền: ${formatCurrency(totalAmount)}`,
         url: paymentInfo.qr_url,
       });
     } catch (error) {
@@ -147,7 +159,16 @@ const PaymentScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => {
+            if (status === 'pending') {
+              cancelSheetRef.current?.open();
+            } else {
+              navigation.goBack();
+            }
+          }}
+        >
           <ChevronLeft color={Colors.text} size={24} />
         </TouchableOpacity>
         <AppText style={styles.headerTitle}>Thanh toán QR</AppText>
@@ -156,35 +177,17 @@ const PaymentScreen = ({ route, navigation }) => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Countdown Timer */}
-        <View style={styles.timerSection}>
-          <Clock size={20} color={timeLeft < 60 ? '#EF4444' : Colors.primary} />
-          <AppText style={[styles.timerText, timeLeft < 60 && { color: '#EF4444' }]}>
-            Vui lòng thanh toán trong: {formatTime(timeLeft)}
-          </AppText>
-        </View>
+        <PaymentTimer timeLeft={timeLeft} />
 
         {/* QR Card */}
-        <View style={styles.qrCard}>
-          <AppText style={styles.qrHeader}>Quét mã VietQR để thanh toán</AppText>
-          <View style={styles.qrWrapper}>
-            {paymentInfo?.qr_url ? (
-              <Image source={{ uri: paymentInfo.qr_url }} style={styles.qrImage} resizeMode="contain" />
-            ) : (
-              <ActivityIndicator size="large" color={Colors.primary} />
-            )}
-          </View>
-          <TouchableOpacity style={styles.shareBtn} onPress={handleShareQR}>
-            <Share2 size={18} color={Colors.primary} />
-            <AppText style={styles.shareBtnText}>Lưu hoặc Chia sẻ mã QR</AppText>
-          </TouchableOpacity>
-        </View>
+        <PaymentQRCard qrUrl={paymentInfo?.qr_url} onShare={handleShareQR} />
 
         {/* Transfer Info */}
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
             <View>
               <AppText style={styles.infoLabel}>Số tiền cần thanh toán</AppText>
-              <AppText style={styles.infoValueLarge}>{totalAmount?.toLocaleString()}đ</AppText>
+              <AppText style={styles.infoValueLarge}>{formatCurrency(totalAmount)}</AppText>
             </View>
             <TouchableOpacity onPress={() => copyToClipboard(totalAmount.toString(), 'Số tiền')}>
               <Copy size={20} color={Colors.primary} />
@@ -247,86 +250,80 @@ const PaymentScreen = ({ route, navigation }) => {
 
         <TouchableOpacity
           style={styles.cancelBtn}
-          onPress={() => setShowCancelModal(true)}
+          onPress={() => cancelSheetRef.current?.open()}
         >
           <AppText style={styles.cancelBtnText}>Hủy giao dịch</AppText>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal chọn lý do hủy */}
-      <View>
-        <StatusBar barStyle={showCancelModal ? "light-content" : "dark-content"} />
-        <Modal
-          visible={showCancelModal}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowCancelModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <TouchableOpacity 
-              style={styles.modalDismiss} 
-              activeOpacity={1} 
-              onPress={() => setShowCancelModal(false)} 
-            />
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <View style={styles.modalHandle} />
-                <AppText style={styles.modalTitle}>Lý do hủy đơn hàng</AppText>
-                <AppText style={styles.modalSubtitle}>Vui lòng cho chúng tôi biết tại sao bạn muốn hủy</AppText>
-              </View>
-
-              <View style={styles.reasonsList}>
-                {CANCEL_REASONS.map((reason) => (
-                  <TouchableOpacity
-                    key={reason}
-                    style={[
-                      styles.reasonItem,
-                      selectedReason === reason && styles.selectedReasonItem
-                    ]}
-                    onPress={() => setSelectedReason(reason)}
-                  >
-                    <AppText style={[
-                      styles.reasonText,
-                      selectedReason === reason && styles.selectedReasonText
-                    ]}>
-                      {reason}
-                    </AppText>
-                    <View style={[
-                      styles.radioCircle,
-                      selectedReason === reason && styles.selectedRadioCircle
-                    ]}>
-                      {selectedReason === reason && <View style={styles.radioInner} />}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.modalActions}>
-                <TouchableOpacity 
-                  style={styles.cancelModalBtn}
-                  onPress={() => setShowCancelModal(false)}
-                >
-                  <AppText style={styles.cancelModalBtnText}>Quay lại</AppText>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[
-                    styles.confirmModalBtn,
-                    (!selectedReason || cancelling) && { opacity: 0.5 }
-                  ]}
-                  onPress={handleCancelBooking}
-                  disabled={!selectedReason || cancelling}
-                >
-                  {cancelling ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <AppText style={styles.confirmModalBtnText}>Xác nhận hủy</AppText>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
+      {/* BottomSheet chọn lý do hủy */}
+      <RBSheet
+        ref={cancelSheetRef}
+        closeOnDragDown={true}
+        closeOnPressMask={true}
+        height={450}
+        customStyles={{
+          wrapper: { backgroundColor: 'rgba(0,0,0,0.5)' },
+          draggableIcon: { backgroundColor: '#E2E8F0', width: 40 },
+          container: { borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 24 }
+        }}
+      >
+        <View style={styles.modalContentInner}>
+          <View style={styles.modalHeader}>
+            <AppText style={styles.modalTitle}>Bạn muốn huỷ đơn đặt dịch vụ?</AppText>
+            <AppText style={styles.modalSubtitle}>Vui lòng cho chúng tôi biết lý do được không?</AppText>
           </View>
-        </Modal>
-      </View>
+
+          <View style={styles.reasonsList}>
+            {CANCEL_REASONS.map((reason) => (
+              <TouchableOpacity
+                key={reason}
+                style={[
+                  styles.reasonItem,
+                  selectedReason === reason && styles.selectedReasonItem
+                ]}
+                onPress={() => setSelectedReason(reason)}
+              >
+                <AppText style={[
+                  styles.reasonText,
+                  selectedReason === reason && styles.selectedReasonText
+                ]}>
+                  {reason}
+                </AppText>
+                <View style={[
+                  styles.radioCircle,
+                  selectedReason === reason && styles.selectedRadioCircle
+                ]}>
+                  {selectedReason === reason && <View style={styles.radioInner} />}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={styles.cancelModalBtn}
+              onPress={() => cancelSheetRef.current?.close()}
+            >
+              <AppText style={styles.cancelModalBtnText}>Quay lại</AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.confirmModalBtn,
+                (!selectedReason || cancelling) && { opacity: 0.5 }
+              ]}
+              onPress={handleCancelBooking}
+              disabled={!selectedReason || cancelling}
+            >
+              {cancelling ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <AppText style={styles.confirmModalBtnText}>Xác nhận hủy</AppText>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </RBSheet>
     </View>
   );
 };
@@ -401,34 +398,12 @@ const styles = StyleSheet.create({
   },
   doneButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalDismiss: {
-    flex: 1,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 40,
-    minHeight: 400,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#E2E8F0',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 20,
+  modalContentInner: {
+    paddingBottom: 20,
   },
   modalHeader: {
     marginBottom: 24,
+    marginTop: 8,
   },
   modalTitle: {
     fontSize: 20,

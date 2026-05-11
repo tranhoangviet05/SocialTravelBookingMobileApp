@@ -139,6 +139,8 @@ Route::middleware('firebase.auth')->group(function () {
         Route::get('/users/{userId}/profile', [\App\Http\Controllers\Social\SocialController::class, 'getOtherProfile']);
         Route::get('/users/search', [FollowController::class, 'search']);
         Route::get('/suggestions/users', [FollowController::class, 'suggestions']);
+        Route::get('/search/all', [PostController::class, 'searchAll']);
+        Route::get('/profile/me', [\App\Http\Controllers\Social\SocialController::class, 'getMyProfile']);
 
         // Hashtags
         Route::get('/tags/suggestions', [TagController::class, 'suggestions']);
@@ -155,7 +157,11 @@ Route::middleware('firebase.auth')->group(function () {
     Route::middleware('role:tourist,provider,admin')->group(function () {
         Route::post('/bookings', [\App\Http\Controllers\General\BookingController::class, 'store']);
         Route::get('/user/bookings', [\App\Http\Controllers\General\BookingController::class, 'myBookings']);
+        Route::get('/user/bookings/{id}', [\App\Http\Controllers\General\BookingController::class, 'show']);
         Route::post('/user/bookings/{id}/cancel', [\App\Http\Controllers\General\BookingController::class, 'cancel']);
+        Route::post('/user/bookings/{id}/check-in', [\App\Http\Controllers\General\BookingController::class, 'checkIn']);
+        Route::post('/user/bookings/{id}/undo-check-in', [\App\Http\Controllers\General\BookingController::class, 'undoCheckIn']);
+        Route::post('/user/bookings/{id}/check-out', [\App\Http\Controllers\General\BookingController::class, 'checkOut']);
         Route::post('/reviews', [\App\Http\Controllers\General\ReviewController::class, 'store']);
         Route::post('/services/{id}/feedbacks', [ServiceFeedbackController::class, 'store']);
 
@@ -167,6 +173,52 @@ Route::middleware('firebase.auth')->group(function () {
         Route::get('/payment/status/{bookingId}', [\App\Http\Controllers\General\PaymentController::class, 'checkStatus']);
         Route::get('/wallet/balance', [\App\Http\Controllers\General\PaymentController::class, 'walletBalance']);
         Route::post('/coupons/apply', [\App\Http\Controllers\General\CouponController::class, 'apply']);
+
+        // Chat routes
+        Route::get('/chat/unread-count', [\App\Http\Controllers\General\ChatController::class, 'getUnreadCount']);
+        Route::get('/chat/conversations', [\App\Http\Controllers\General\ChatController::class, 'getConversations']);
+        Route::get('/chat/conversations/{id}/messages', [\App\Http\Controllers\General\ChatController::class, 'getMessages']);
+        Route::post('/chat/messages', [\App\Http\Controllers\General\ChatController::class, 'sendMessage']);
+
+        // Broadcasting auth (xác thực kênh riêng tư cho realtime)
+        Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
+            $user = $request->user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $pusher = new \Pusher\Pusher(
+                config('broadcasting.connections.reverb.key'),
+                config('broadcasting.connections.reverb.secret'),
+                config('broadcasting.connections.reverb.app_id'),
+                [
+                    'host' => config('broadcasting.connections.reverb.options.host', '127.0.0.1'),
+                    'port' => config('broadcasting.connections.reverb.options.port', 8080),
+                    'scheme' => config('broadcasting.connections.reverb.options.scheme', 'http'),
+                    'useTLS' => config('broadcasting.connections.reverb.options.useTLS', false),
+                ]
+            );
+
+            $channelName = $request->input('channel_name');
+            $socketId = $request->input('socket_id');
+
+            // Xác thực quyền truy cập kênh
+            if (str_starts_with($channelName, 'private-chat.')) {
+                $conversationId = str_replace('private-chat.', '', $channelName);
+                $conversation = \App\Models\Conversation::find($conversationId);
+
+                if (!$conversation) {
+                    return response()->json(['error' => 'Channel not found'], 403);
+                }
+
+                if ($user->id !== $conversation->user_one && $user->id !== $conversation->user_two) {
+                    return response()->json(['error' => 'Forbidden'], 403);
+                }
+            }
+
+            $auth = $pusher->authorizeChannel($channelName, $socketId);
+            return response()->json(json_decode($auth, true));
+        });
     });
 
     // ===========================================================

@@ -227,6 +227,10 @@ class BookingController extends Controller
                     'payment_method' => $bk->payment_method,
                     'payment_status' => $bk->payment_status,
                     'status' => $bk->status,
+                    'tourist_check_in_at' => $bk->tourist_check_in_at,
+                    'is_checked_in' => (bool)$bk->is_checked_in,
+                    'checked_in_at' => $bk->checked_in_at,
+                    'checked_out_at' => $bk->checked_out_at,
                     'created_at' => $bk->created_at?->toISOString(),
                 ];
             });
@@ -294,6 +298,112 @@ class BookingController extends Controller
                 'message' => 'Lỗi khi hủy đơn: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Lấy chi tiết một đơn đặt chỗ
+     * GET /api/user/bookings/{id}
+     */
+    public function show(Request $request, $id)
+    {
+        $userId = $request->user->id;
+        $booking = Booking::with(['service.media', 'roomType', 'provider'])
+            ->where('id', $id)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data' => $booking
+        ]);
+    }
+
+    /**
+     * Check-in (Tourist nhấn nút yêu cầu)
+     * POST /api/user/bookings/{id}/check-in
+     */
+    public function checkIn(Request $request, $id, \App\Services\ChatService $chatService)
+    {
+        $userId = $request->user->id;
+        $booking = Booking::where('id', $id)->where('user_id', $userId)->firstOrFail();
+
+        if ($booking->tourist_check_in_at) {
+            return response()->json(['success' => false, 'message' => 'Bạn đã gửi yêu cầu check-in rồi.'], 400);
+        }
+
+        $booking->update([
+            'tourist_check_in_at' => now(),
+            // Chúng ta chưa cập nhật status chính thức sang 'ongoing' cho đến khi provider xác nhận
+        ]);
+
+        $chatService->sendCheckInRequestMessage($booking);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã gửi yêu cầu check-in! Vui lòng chờ nhà cung cấp xác nhận.',
+            'data' => $booking
+        ]);
+    }
+
+    /**
+     * Hoàn tác Check-in (Tourist nhấn nút hủy yêu cầu nếu nhầm)
+     * POST /api/user/bookings/{id}/undo-check-in
+     */
+    public function undoCheckIn(Request $request, $id, \App\Services\ChatService $chatService)
+    {
+        $userId = $request->user->id;
+        $booking = Booking::where('id', $id)->where('user_id', $userId)->firstOrFail();
+
+        if ($booking->is_checked_in) {
+            return response()->json(['success' => false, 'message' => 'Nhà cung cấp đã xác nhận, không thể hoàn tác.'], 400);
+        }
+
+        if (!$booking->tourist_check_in_at) {
+            return response()->json(['success' => false, 'message' => 'Bạn chưa thực hiện check-in.'], 400);
+        }
+
+        $booking->update([
+            'tourist_check_in_at' => null,
+        ]);
+
+        $chatService->sendUndoCheckInMessage($booking);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã hoàn tác yêu cầu check-in.',
+            'data' => $booking
+        ]);
+    }
+
+    /**
+     * Check-out (Tourist)
+     * POST /api/user/bookings/{id}/check-out
+     */
+    public function checkOut(Request $request, $id, \App\Services\ChatService $chatService)
+    {
+        $userId = $request->user->id;
+        $booking = Booking::where('id', $id)->where('user_id', $userId)->firstOrFail();
+
+        if (!$booking->is_checked_in) {
+            return response()->json(['success' => false, 'message' => 'Bạn chưa được xác nhận check-in, không thể check-out.'], 400);
+        }
+
+        if ($booking->checked_out_at) {
+            return response()->json(['success' => false, 'message' => 'Bạn đã check-out rồi.'], 400);
+        }
+
+        $booking->update([
+            'checked_out_at' => now(),
+            'status' => 'completed' // Chuyển sang trạng thái hoàn thành
+        ]);
+
+        $chatService->sendCheckOutMessage($booking);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Check-out thành công! Hy vọng bạn hài lòng với dịch vụ.',
+            'data' => $booking
+        ]);
     }
 
     /**

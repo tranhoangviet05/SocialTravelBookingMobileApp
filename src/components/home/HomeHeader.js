@@ -6,12 +6,36 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../hooks/useAuth';
+import axios from 'axios';
+import { BASE_URL } from '../../api/apiClient';
 
 const HEADER_DARK = '#0077B6';
 
 const HomeHeader = ({ activeCategory, setActiveCategory }) => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { token, user } = useAuth();
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (token) {
+      fetchUnreadCount();
+    }
+  }, [token]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/chat/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data.success) {
+        setUnreadCount(response.data.data.unread_count);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy số lượng tin nhắn chưa đọc:", error);
+    }
+  };
 
   const categories = [
     { id: 'stay', label: 'Lưu trú', icon: Bed },
@@ -35,8 +59,18 @@ const HomeHeader = ({ activeCategory, setActiveCategory }) => {
 
         <View style={styles.sideColumn}>
           <View style={styles.rightIcons}>
-            <TouchableOpacity style={styles.iconButton}>
-              <MessageCircle color="rgba(255,255,255,0.9)" size={22} />
+            <TouchableOpacity 
+              style={styles.iconButton} 
+              onPress={() => navigation.navigate('ConversationList')}
+            >
+              <View>
+                <MessageCircle color="rgba(255,255,255,0.9)" size={22} />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton}>
               <Bell color="rgba(255,255,255,0.9)" size={22} />
@@ -133,6 +167,24 @@ const styles = StyleSheet.create({
   },
   activeCategoryLabel: {
     color: HEADER_DARK,
+    fontWeight: 'bold',
+  },
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 9,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: HEADER_DARK,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
     fontWeight: 'bold',
   },
 });

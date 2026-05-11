@@ -24,8 +24,12 @@ import { Typography } from '../constants/Typography';
 import HomeHeader from '../components/home/HomeHeader';
 import CustomDatePicker from '../components/home/CustomDatePicker';
 import GuestPicker from '../components/home/GuestPicker';
+import TrendingDestination from '../components/home/TrendingDestination';
+import OfferCard from '../components/home/OfferCard';
+import AIHelpBanner from '../components/home/AIHelpBanner';
 import apiClient, { BASE_URL } from '../api/apiClient';
 import Skeleton from '../components/common/Skeleton';
+import { formatCurrency } from '../utils/helpers';
 
 const HEADER_DARK = '#0077B6';
 const { width } = Dimensions.get('window');
@@ -110,16 +114,6 @@ const HomeScreen = ({ navigation }) => {
     { id: 3, title: 'Hỗ trợ 24/7', desc: 'Đội ngũ hỗ trợ tận tâm mọi lúc.', Icon: Headphones, color: '#2196F3' },
     { id: 4, title: 'Giá tốt nhất', desc: 'Cam kết mức giá cạnh tranh nhất.', Icon: Zap, color: '#FF5722' },
   ];
-
-  const getOfferGradient = (index) => {
-    const gradients = [
-      ['#FF9A8B', '#FF6A88'],
-      ['#A18CD1', '#FBC2EB'],
-      ['#84FAB0', '#8FD3F4'],
-      ['#FAD0C4', '#FFD1FF'],
-    ];
-    return gradients[index % gradients.length];
-  };
 
   const getImageUrl = (url) => {
     if (!url) return 'https://vcdn1-dulich.vnecdn.net/2022/10/18/3-1666085449.jpg?w=1200&h=0&q=100&dpr=1&fit=crop&s=Zf0C_T-7k6eUjW-1-4gCag';
@@ -221,24 +215,12 @@ const HomeScreen = ({ navigation }) => {
             </View>
           ) : (
             trendingDestinations.map(dest => (
-              <TouchableOpacity key={dest.id} style={styles.featuredCard}>
-                <ImageBackground
-                  source={{ uri: getImageUrl(dest.image_url) }}
-                  style={styles.featuredImage}
-                  imageStyle={{ borderRadius: 20 }}
-                >
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.8)']}
-                    style={styles.featuredOverlay}
-                  >
-                    <AppText style={styles.featuredLocation}>{dest.name?.toUpperCase()}</AppText>
-                    <View style={styles.featuredTag}>
-                      <MapPin color="#fff" size={14} />
-                      <AppText style={styles.featuredTagAppText}>{dest.parent?.name || 'Việt Nam'}</AppText>
-                    </View>
-                  </LinearGradient>
-                </ImageBackground>
-              </TouchableOpacity>
+              <TrendingDestination 
+                key={dest.id} 
+                destination={dest} 
+                getImageUrl={getImageUrl} 
+                width={width} 
+              />
             ))
           )}
         </ScrollView>
@@ -263,24 +245,7 @@ const HomeScreen = ({ navigation }) => {
             </View>
           ) : (
             offers.map((item, index) => (
-              <LinearGradient
-                key={item.id}
-                colors={getOfferGradient(index)}
-                style={styles.offerCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <View style={styles.offerContent}>
-                  <Gift color="#fff" size={24} style={{ marginBottom: 8 }} />
-                  <AppText style={styles.offerTitle} numberOfLines={1}>{item.code}</AppText>
-                  <AppText style={styles.offerSubtitle} numberOfLines={2}>
-                    {item.type === 'percent' ? `Giảm ${item.discount_value}%` : `Giảm ${item.discount_value}đ`}
-                  </AppText>
-                  <View style={styles.promoBadge}>
-                    <AppText style={styles.promoAppText}>MIN: {item.min_order_amount?.toLocaleString()}đ</AppText>
-                  </View>
-                </View>
-              </LinearGradient>
+              <OfferCard key={item.id} item={item} index={index} />
             ))
           )}
         </ScrollView>
@@ -306,29 +271,7 @@ const HomeScreen = ({ navigation }) => {
         </ScrollView>
 
         {/* 4. AI Help Section */}
-        <LinearGradient
-          colors={['#4F46E5', '#7C3AED']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.aiCard}
-        >
-          <View style={styles.aiContent}>
-            <View style={styles.aiHeader}>
-              <Lightbulb color="#fff" size={28} />
-              <AppText style={styles.aiTitle}>Trợ giúp từ Social Travel Booking</AppText>
-            </View>
-            <AppText style={styles.aiDesc}>
-              Để Social Travel Booking giúp bạn xây dựng một hành trình du lịch hoàn hảo dựa trên sở thích cá nhân chỉ trong vài giây.
-            </AppText>
-            <TouchableOpacity style={styles.aiButton}>
-              <Sparkles color="#4F46E5" size={18} />
-              <AppText style={styles.aiButtonAppText}>Xây dựng hành trình cho tôi</AppText>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.aiIconFloating}>
-            <Navigation color="rgba(255,255,255,0.2)" size={100} />
-          </View>
-        </LinearGradient>
+        <AIHelpBanner onPress={() => console.log('AI Planner')} />
 
         {/* 5. Suggestion Management */}
         <View style={styles.noticeCard}>

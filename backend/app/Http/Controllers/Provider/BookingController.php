@@ -31,7 +31,12 @@ class BookingController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            if ($request->status === 'checkin_requested') {
+                $query->whereNotNull('tourist_check_in_at')
+                      ->where('is_checked_in', false);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         $bookings = $query->get();
@@ -63,7 +68,7 @@ class BookingController extends Controller
     /**
      * Cập nhật trạng thái đơn (confirmed, ongoing, completed, cancelled)
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(Request $request, $id, \App\Services\ChatService $chatService)
     {
         $provider = $this->getProvider($request);
         $booking = Booking::findOrFail($id);
@@ -102,12 +107,26 @@ class BookingController extends Controller
 
         $booking->status = $newStatus;
 
+        if ($newStatus === 'ongoing') {
+            $booking->is_checked_in = true;
+            $booking->checked_in_at = now();
+        }
+
         if ($newStatus === 'cancelled') {
             $booking->cancel_reason = $request->input('cancel_reason', 'Bị hủy bởi nhà cung cấp');
             $booking->cancelled_at = now();
         }
 
         $booking->save();
+
+        // Gửi tin nhắn tự động khi xác nhận
+        if ($newStatus === 'confirmed') {
+            $chatService->sendBookingConfirmedMessage($booking);
+        }
+
+        if ($newStatus === 'ongoing') {
+            $chatService->sendCheckInConfirmedMessage($booking);
+        }
 
         return response()->json([
             'success' => true,

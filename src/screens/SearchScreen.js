@@ -19,6 +19,7 @@ import apiClient, { BASE_URL } from '../api/apiClient';
 import Skeleton from '../components/common/Skeleton';
 import CustomDatePicker from '../components/home/CustomDatePicker';
 import GuestPicker from '../components/home/GuestPicker';
+import { formatCurrency } from '../utils/helpers';
 
 const { width, height } = Dimensions.get('window');
 
@@ -180,7 +181,7 @@ const SearchScreen = ({ route, navigation }) => {
         </View>
         <View style={styles.priceRow}>
           <AppText style={styles.priceValue}>
-            {Number(item.base_price).toLocaleString()}đ
+            {formatCurrency(item.base_price)}
             <AppText style={[styles.priceUnit, { color: Colors.primary, fontWeight: '700' }]}>
               {item.type?.toLowerCase() === 'tour' ? ' /người' : (item.type?.toLowerCase() === 'vehicle' ? ' /ngày' : ' /đêm')}
             </AppText>

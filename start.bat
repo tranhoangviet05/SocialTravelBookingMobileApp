@@ -35,6 +35,8 @@ echo   Frontend Web : http://localhost:5173
 echo   Ngrok        : Tunneling port 8000
 echo   --------------------------------------------
 echo   Mobile App   : Run 'npx expo start' to start
+echo   Backend API  : php -d upload_max_filesize=50M -d post_max_size=50M -S 0.0.0.0:8000 -t public
+echo   --------------------------------------------
 echo ============================================
 echo.
 echo Dong cua so nay se KHONG tat cac server.
